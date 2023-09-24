@@ -7,17 +7,16 @@ struct DomainDetails {
     uint deposit;
 }
 
+uint256 constant DEPOSIT_PRICE = 1 ether;
+
 contract RegisterDomains {
-    uint256 constant public DOMAIN_RESERVE_ETH_VALUE = 3;
 
     address public owner;
     mapping(string => DomainDetails) domains;
-    uint public price;
     address public user;
 
     constructor() {
         owner = payable(msg.sender);
-        price = 1 ether;
     }
 
     function getDomainOwner(string memory domainName) external view returns (DomainDetails memory) {
@@ -25,7 +24,7 @@ contract RegisterDomains {
     }
 
     function registerDomain(string memory domainName) external payable {
-        require(msg.value >= price, "Insufficient ETH sent");
+        require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
 
         // check if already existing domain for user
         DomainDetails memory existingDomain = this.getDomainOwner(domainName);
@@ -44,6 +43,6 @@ contract RegisterDomains {
 
         delete domains[domainName];
 
-        payable(msg.sender).transfer(price);
+        payable(msg.sender).transfer(DEPOSIT_PRICE);
     }
 }
