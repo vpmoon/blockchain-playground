@@ -18,7 +18,7 @@ describe("RegisterDomains contract", function () {
     }
 
     describe("Deployment", function () {
-        it.only("Should set owner correctly", async function () {
+        it("Should set owner correctly", async function () {
             const { hardhatToken, owner } = await loadFixture(deployTokenFixture);
 
             expect(await hardhatToken.owner()).to.equal(owner.address);
@@ -30,6 +30,7 @@ describe("RegisterDomains contract", function () {
             const etherToSend = ethers.parseEther("1");
 
             await hardhatToken.registerDomain('com', { value:  etherToSend });
+
             const domainDetails = await hardhatToken.getDomainOwner('com');
 
             expect(domainDetails.domainOwner).to.equal(owner.address);
@@ -61,6 +62,14 @@ describe("RegisterDomains contract", function () {
             await expect(hardhatToken.connect(addr1)
                 .unregisterDomain('com', { value: ether }))
                 .to.be.revertedWith("Domain should be unregistered by the domain owner");
+        });
+
+        it("Should fail if unregistering free domain", async function () {
+            const { hardhatToken, ether } = await loadFixture(deployTokenFixture);
+
+            await expect(hardhatToken
+                .unregisterDomain('ua', { value: ether }))
+                .to.be.revertedWith("Domain is not registered yet");
         });
 
         it("Should unregister domain and return deposit", async function () {

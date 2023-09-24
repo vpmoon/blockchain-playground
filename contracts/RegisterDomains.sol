@@ -10,10 +10,8 @@ struct DomainDetails {
 uint256 constant DEPOSIT_PRICE = 1 ether;
 
 contract RegisterDomains {
-
-    address public owner;
+    address payable public owner;
     mapping(string => DomainDetails) domains;
-    address public user;
 
     constructor() {
         owner = payable(msg.sender);
@@ -31,7 +29,7 @@ contract RegisterDomains {
         require(existingDomain.deposit == 0, "Domain is already reserved");
 
         DomainDetails memory domain = DomainDetails({
-            domainOwner: msg.sender,
+            domainOwner: owner,
             deposit: msg.value
         });
         domains[domainName] = domain;
@@ -39,10 +37,12 @@ contract RegisterDomains {
 
     function unregisterDomain(string memory domainName) external payable {
         DomainDetails memory existingDomain = this.getDomainOwner(domainName);
+
+        require(existingDomain.deposit != 0, "Domain is not registered yet");
         require(msg.sender == existingDomain.domainOwner, "Domain should be unregistered by the domain owner");
 
         delete domains[domainName];
 
-        payable(msg.sender).transfer(DEPOSIT_PRICE);
+        owner.transfer(DEPOSIT_PRICE);
     }
 }
