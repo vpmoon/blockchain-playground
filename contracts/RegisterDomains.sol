@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 struct DomainDetails {
-    address domainOwner;
+    address controller;
     uint deposit;
 }
 
@@ -23,7 +23,7 @@ contract RegisterDomains {
 
     function createDomain(string memory domainName) internal {
         DomainDetails memory domain = DomainDetails({
-            domainOwner: owner,
+            controller: owner,
             deposit: msg.value
         });
         domains[domainName] = domain;
@@ -46,7 +46,7 @@ contract RegisterDomains {
         DomainDetails memory existingDomain = this.getDomain(domainName);
 
         require(existingDomain.deposit != 0, "Domain is not registered yet");
-        require(msg.sender == existingDomain.domainOwner, "Domain should be unregistered by the domain owner");
+        require(msg.sender == existingDomain.controller, "Domain should be unregistered by the domain owner");
 
         deleteDomain(domainName);
 

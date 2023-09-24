@@ -36,7 +36,7 @@ describe("RegisterDomains contract", function () {
 
                 const domainDetails = await hardhatToken.getDomain('com');
 
-                expect(domainDetails.domainOwner).to.equal(owner.address);
+                expect(domainDetails.controller).to.equal(owner.address);
                 expect(domainDetails.deposit).to.equal(etherToSend);
             });
 
@@ -67,7 +67,7 @@ describe("RegisterDomains contract", function () {
 
                 const domainDetails = await hardhatToken.getDomain('com');
 
-                expect(domainDetails.domainOwner).to.equal(undefinedAddress)
+                expect(domainDetails.controller).to.equal(undefinedAddress)
                 await expect(tx).to.changeEtherBalances([owner, hardhatToken], [ether, -ether]);
             });
 
