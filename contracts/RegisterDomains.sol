@@ -36,12 +36,14 @@ contract RegisterDomains {
             deposit: msg.value
         });
         domains[domainName] = domain;
-//        payable(msg.owner).transfer(1 ether);
     }
 
-    function unregisterDomain() external {
-        // TODO only owner of domain check
-        // require(msg.sender == owner, "You aren't the owner");
+    function unregisterDomain(string memory domainName) external payable {
+        DomainDetails memory existingDomain = this.getDomainOwner(domainName);
+        require(msg.sender == existingDomain.domainOwner, "Domain should be unregistered by the domain owner");
+
+        delete domains[domainName];
+
         // owner.transfer(address(this).balance);
         payable(msg.sender).transfer(price);
     }
