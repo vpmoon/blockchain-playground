@@ -44,18 +44,6 @@ contract RegisterDomains {
 
         delete domains[domainName];
 
-        // owner.transfer(address(this).balance);
         payable(msg.sender).transfer(price);
     }
-
-//    function transfer(address to, uint256 amount) external {
-//        // Check if the transaction sender has enough tokens.
-//        // If `require`'s first argument evaluates to `false` then the
-//        // transaction will revert.
-//        require(balances[msg.sender] >= amount, "Not enough tokens");
-//
-//        balances[msg.sender] -= amount;
-//        balances[to] += amount;
-//
-//    }
 }
