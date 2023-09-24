@@ -17,17 +17,11 @@ contract RegisterDomains {
         owner = payable(msg.sender);
     }
 
-    function getDomainOwner(string memory domainName) external view returns (DomainDetails memory) {
+    function getDomain(string memory domainName) external view returns (DomainDetails memory) {
         return domains[domainName];
     }
 
-    function registerDomain(string memory domainName) external payable {
-        require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
-
-        // check if already existing domain for user
-        DomainDetails memory existingDomain = this.getDomainOwner(domainName);
-        require(existingDomain.deposit == 0, "Domain is already reserved");
-
+    function createDomain(string memory domainName) internal {
         DomainDetails memory domain = DomainDetails({
             domainOwner: owner,
             deposit: msg.value
@@ -35,13 +29,26 @@ contract RegisterDomains {
         domains[domainName] = domain;
     }
 
+    function deleteDomain(string memory domainName) internal {
+        delete domains[domainName];
+    }
+
+    function registerDomain(string memory domainName) external payable {
+        require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
+
+        DomainDetails memory existingDomain = this.getDomain(domainName);
+        require(existingDomain.deposit == 0, "Domain is already reserved");
+
+        createDomain(domainName);
+    }
+
     function unregisterDomain(string memory domainName) external payable {
-        DomainDetails memory existingDomain = this.getDomainOwner(domainName);
+        DomainDetails memory existingDomain = this.getDomain(domainName);
 
         require(existingDomain.deposit != 0, "Domain is not registered yet");
         require(msg.sender == existingDomain.domainOwner, "Domain should be unregistered by the domain owner");
 
-        delete domains[domainName];
+        deleteDomain(domainName);
 
         owner.transfer(DEPOSIT_PRICE);
     }
