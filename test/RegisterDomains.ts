@@ -18,10 +18,14 @@ describe("RegisterDomains contract", function () {
     }
 
     describe("Deployment", function () {
-        it("Should register domain", async function () {
+        it.only("Should set owner correctly", async function () {
             const { hardhatToken, owner } = await loadFixture(deployTokenFixture);
 
             expect(await hardhatToken.owner()).to.equal(owner.address);
+        });
+
+        it("Should register domain", async function () {
+            const { hardhatToken, owner } = await loadFixture(deployTokenFixture);
 
             const etherToSend = ethers.parseEther("1");
 
