@@ -17,7 +17,7 @@ contract RegisterDomains {
         owner = payable(msg.sender);
     }
 
-    function getDomain(string memory domainName) external view returns (DomainDetails memory) {
+    function getDomain(string memory domainName) public view returns (DomainDetails memory) {
         return domains[domainName];
     }
 
@@ -36,14 +36,14 @@ contract RegisterDomains {
     function registerDomain(string memory domainName) external payable {
         require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
 
-        DomainDetails memory existingDomain = this.getDomain(domainName);
+        DomainDetails memory existingDomain = getDomain(domainName);
         require(existingDomain.deposit == 0, "Domain is already reserved");
 
         createDomain(domainName);
     }
 
     function unregisterDomain(string memory domainName) external payable {
-        DomainDetails memory existingDomain = this.getDomain(domainName);
+        DomainDetails memory existingDomain = getDomain(domainName);
 
         require(existingDomain.deposit != 0, "Domain is not registered yet");
         require(msg.sender == existingDomain.controller, "Domain should be unregistered by the domain owner");
