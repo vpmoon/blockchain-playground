@@ -1,3 +1,5 @@
+import { RegisterDomainsFixture } from "./RegisterDomains.types";
+
 const { expect } = require("chai");
 const {
     loadFixture,
@@ -6,7 +8,9 @@ const { ethers } = require("hardhat");
 import { AddressZero } from "@ethersproject/constants";
 
 describe("RegisterDomains contract", function () {
-    async function deployTokenFixture() {
+    let contractState: RegisterDomainsFixture;
+
+    async function deployTokenFixture(): Promise<RegisterDomainsFixture> {
         const [owner, addr1] = await ethers.getSigners();
         const domainsContract = await ethers.deployContract("RegisterDomains");
         const ether = ethers.parseEther("1");
@@ -16,10 +20,14 @@ describe("RegisterDomains contract", function () {
         return { domainsContract, owner, addr1, ether };
     }
 
+    beforeEach(async () => {
+        contractState = await loadFixture(deployTokenFixture);
+    });
+
     describe("Deployment", function () {
         describe('Initialization', function () {
             it("Should set owner correctly", async function () {
-                const { domainsContract, owner } = await loadFixture(deployTokenFixture);
+                const { domainsContract, owner } = contractState;
 
                 expect(await domainsContract.owner()).to.equal(owner.address);
             });
@@ -27,7 +35,7 @@ describe("RegisterDomains contract", function () {
 
         describe('Domain registration', function () {
             it("Should register domain", async function () {
-                const { domainsContract, owner } = await loadFixture(deployTokenFixture);
+                const { domainsContract, owner } = contractState;
 
                 const etherToSend = ethers.parseEther("1");
 
@@ -40,7 +48,7 @@ describe("RegisterDomains contract", function () {
             });
 
             it("Should fail if not enough etn for registering domain", async function () {
-                const { domainsContract } = await loadFixture(deployTokenFixture);
+                const { domainsContract } = contractState;
 
                 const etherToSend = ethers.parseEther("0.1");
 
@@ -49,7 +57,7 @@ describe("RegisterDomains contract", function () {
             });
 
             it("Should take deposit as 1 ether when assign domain", async function () {
-                const { domainsContract, owner, ether } = await loadFixture(deployTokenFixture);
+                const { domainsContract, owner, ether } = contractState;
 
                 const tx = await domainsContract.registerDomain('com', { value: ether });
 
@@ -59,7 +67,7 @@ describe("RegisterDomains contract", function () {
 
         describe('Domain releasing', function () {
             it("Should unregister domain and return deposit", async function () {
-                const { domainsContract, owner, ether } = await loadFixture(deployTokenFixture);
+                const { domainsContract, owner, ether } = contractState;
 
                 await domainsContract.registerDomain('com', { value:  ether });
                 const tx = await domainsContract.unregisterDomain('com');
@@ -71,7 +79,7 @@ describe("RegisterDomains contract", function () {
             });
 
             it("Should fail if unregistering by not owner", async function () {
-                const { domainsContract, addr1, ether } = await loadFixture(deployTokenFixture);
+                const { domainsContract, addr1, ether } = contractState;
 
                 await domainsContract.registerDomain('com', { value:  ether });
 
@@ -81,7 +89,7 @@ describe("RegisterDomains contract", function () {
             });
 
             it("Should fail if unregistering free domain", async function () {
-                const { domainsContract, ether } = await loadFixture(deployTokenFixture);
+                const { domainsContract, ether } = contractState;
 
                 await expect(domainsContract
                     .unregisterDomain('ua', { value: ether }))
