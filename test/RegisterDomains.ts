@@ -3,8 +3,7 @@ const {
     loadFixture,
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
-
-const undefinedAddress = "0x0000000000000000000000000000000000000000";
+import { AddressZero } from "@ethersproject/constants";
 
 describe("RegisterDomains contract", function () {
     async function deployTokenFixture() {
@@ -67,7 +66,7 @@ describe("RegisterDomains contract", function () {
 
                 const domainDetails = await hardhatToken.getDomain('com');
 
-                expect(domainDetails.controller).to.equal(undefinedAddress)
+                expect(domainDetails.controller).to.equal(AddressZero)
                 await expect(tx).to.changeEtherBalances([owner, hardhatToken], [ether, -ether]);
             });
 
