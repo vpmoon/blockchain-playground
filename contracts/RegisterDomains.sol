@@ -10,11 +10,11 @@ struct DomainDetails {
 uint256 constant DEPOSIT_PRICE = 1 ether;
 
 contract RegisterDomains {
-    address payable public owner;
+    address payable public controller;
     mapping(string => DomainDetails) domains;
 
     constructor() {
-        owner = payable(msg.sender);
+        controller = payable(msg.sender);
     }
 
     function getDomain(string memory domainName) external view returns (DomainDetails memory) {
@@ -23,7 +23,7 @@ contract RegisterDomains {
 
     function createDomain(string memory domainName) internal {
         DomainDetails memory domain = DomainDetails({
-            controller: owner,
+            controller: controller,
             deposit: msg.value
         });
         domains[domainName] = domain;
@@ -50,6 +50,6 @@ contract RegisterDomains {
 
         deleteDomain(domainName);
 
-        owner.transfer(DEPOSIT_PRICE);
+        controller.transfer(DEPOSIT_PRICE);
     }
 }

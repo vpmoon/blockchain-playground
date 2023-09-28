@@ -29,7 +29,7 @@ describe("RegisterDomains contract", function () {
             it("Should set owner correctly", async function () {
                 const { domainsContract, owner } = contractState;
 
-                expect(await domainsContract.owner()).to.equal(owner.address);
+                expect(await domainsContract.controller()).to.equal(owner.address);
             });
         });
 
