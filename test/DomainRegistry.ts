@@ -51,11 +51,11 @@ describe("DomainRegistry contract", function () {
             it("Should register domain and emit event", async function () {
                 const { domainsContract, addr1, ether } = contractState;
 
-                const tx = await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
+                await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
 
                 const domainDetails = await domainsContract.getDomain('com');
 
-                expect(domainDetails.deposit).to.equal(ether);
+                expect(domainDetails.controller).to.equal(addr1.address);
             });
 
             it("Should fail if not enough etn for registering domain", async function () {
