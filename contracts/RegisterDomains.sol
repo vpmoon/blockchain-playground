@@ -13,8 +13,8 @@ contract RegisterDomains {
     address payable public owner;
     mapping(string => DomainDetails) domains;
 
-    event DomainRegistered(address indexed controller, DomainDetails domainDetails);
-    event DomainReleased(address indexed controller, DomainDetails domainDetails);
+    event DomainRegistered(address indexed controller, string domainName);
+    event DomainReleased(address indexed controller, string domainName);
 
     constructor() {
         owner = payable(msg.sender);
@@ -43,7 +43,7 @@ contract RegisterDomains {
         require(existingDomain.deposit == 0, "Domain is already reserved");
 
         createDomain(domainName);
-        emit DomainRegistered(msg.sender, existingDomain);
+        emit DomainRegistered(msg.sender, domainName);
     }
 
     function unregisterDomain(string memory domainName) external payable {
@@ -55,6 +55,6 @@ contract RegisterDomains {
         deleteDomain(domainName);
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);
-        emit DomainReleased(msg.sender, existingDomain);
+        emit DomainReleased(msg.sender, domainName);
     }
 }

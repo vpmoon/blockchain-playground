@@ -17,17 +17,6 @@ describe("RegisterDomains contract", function () {
 
         await domainsContract.waitForDeployment();
 
-        domainsContract.on("DomainRegistered", (address, domainDetails) => {
-            console.log('DomainRegistered')
-            console.log("address: ", address);
-            console.log("domainDetails: ", domainDetails);
-        });
-        domainsContract.on("DomainReleased", (address, domainDetails) => {
-            console.log(DomainReleased)
-            console.log("address: ", address);
-            console.log("domainDetails: ", domainDetails);
-        });
-
         return { domainsContract, owner, addr1, ether };
     }
 
@@ -44,23 +33,29 @@ describe("RegisterDomains contract", function () {
             });
         });
 
+        describe('Tracking events', function () {
+            it("Should catch events when register and release", async function () {
+                const { domainsContract, owner, ether } = contractState;
+                await expect(domainsContract.registerDomain('com', { value:  ether }))
+                    .to.emit(domainsContract, 'DomainRegistered')
+                    .withArgs(owner.address, 'com');
+
+                await expect(domainsContract.unregisterDomain('com'))
+                    .to.emit(domainsContract, 'DomainReleased')
+                    .withArgs(owner.address, 'com');
+
+            });
+        });
+
         describe('Domain registration', function () {
             it("Should register domain and emit event", async function () {
-                const { domainsContract, addr1 } = contractState;
+                const { domainsContract, addr1, ether } = contractState;
 
-                const etherToSend = ethers.parseEther("1");
-
-                const tx = await domainsContract.connect(addr1).registerDomain('com', { value:  etherToSend });
+                const tx = await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
 
                 const domainDetails = await domainsContract.getDomain('com');
 
-                expect(domainDetails.deposit).to.equal(etherToSend);
-
-                const events = await domainsContract.queryFilter(
-                    domainsContract.filters.DomainRegistered(addr1.address)
-                );
-                expect(events.length).to.equal(1, 'Only one event is emitted when registering domain');
-                expect(events[0].fragment.name).to.equal('DomainRegistered');
+                expect(domainDetails.deposit).to.equal(ether);
             });
 
             it("Should fail if not enough etn for registering domain", async function () {
@@ -92,13 +87,9 @@ describe("RegisterDomains contract", function () {
                 await expect(tx2).to.changeEtherBalances([addr1, domainsContract], [ether, -ether]);
 
                 const domainDetails = await domainsContract.getDomain('com');
-                const events = await domainsContract.queryFilter(
-                    domainsContract.filters.DomainReleased(addr1.address)
-                );
-
                 expect(domainDetails.controller).to.equal(AddressZero);
-                expect(events.length).to.equal(1, 'Only one event is emitted when unregistering domain');
-                expect(events[0].fragment.name).to.equal('DomainReleased');
+
+
             });
 
             it("Should fail if unregistering by not domain owner", async function () {
