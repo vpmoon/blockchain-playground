@@ -48,17 +48,13 @@ contract RegisterDomains {
         domains[domainName] = domain;
     }
 
-    function deleteDomain(string memory domainName) internal {
-        delete domains[domainName];
-    }
-
     function registerDomain(string memory domainName) external payable registerIfNotExists(domainName) {
         createDomain(domainName);
         emit DomainRegistered(msg.sender, domainName);
     }
 
     function unregisterDomain(string memory domainName) external payable unregisterOwnerCheck(domainName) {
-        deleteDomain(domainName);
+        delete domains[domainName];
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);
         emit DomainReleased(msg.sender, domainName);
