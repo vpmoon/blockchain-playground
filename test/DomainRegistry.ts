@@ -9,15 +9,15 @@ import { AddressZero } from "@ethersproject/constants";
 
 describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
+    const ether = ethers.parseEther("1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
         const [owner, addr1] = await ethers.getSigners();
         const domainsContract = await ethers.deployContract("DomainRegistry");
-        const ether = ethers.parseEther("1");
 
         await domainsContract.waitForDeployment();
 
-        return { domainsContract, owner, addr1, ether };
+        return { domainsContract, owner, addr1 };
     }
 
     beforeEach(async () => {
@@ -35,7 +35,7 @@ describe("DomainRegistry contract", function () {
 
         describe('Tracking events', function () {
             it("Should catch events when register and release", async function () {
-                const { domainsContract, owner, ether } = contractState;
+                const { domainsContract, owner } = contractState;
                 await expect(domainsContract.registerDomain('com', { value:  ether }))
                     .to.emit(domainsContract, 'DomainRegistered')
                     .withArgs(owner.address, 'com');
@@ -49,7 +49,7 @@ describe("DomainRegistry contract", function () {
 
         describe('Domain registration', function () {
             it("Should register domain and emit event", async function () {
-                const { domainsContract, addr1, ether } = contractState;
+                const { domainsContract, addr1 } = contractState;
 
                 await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
 
@@ -68,7 +68,7 @@ describe("DomainRegistry contract", function () {
             });
 
             it("Should take deposit as 1 ether when assign domain", async function () {
-                const { domainsContract, addr1, ether } = contractState;
+                const { domainsContract, addr1 } = contractState;
 
                 const tx = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
 
@@ -78,7 +78,7 @@ describe("DomainRegistry contract", function () {
 
         describe('Domain releasing', function () {
             it("Should unregister domain, return deposit and emit event", async function () {
-                const { domainsContract, addr1, ether } = contractState;
+                const { domainsContract, addr1 } = contractState;
 
                 const tx1 = await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
                 await expect(tx1).to.changeEtherBalances([addr1, domainsContract], [-ether, ether]);
@@ -93,7 +93,7 @@ describe("DomainRegistry contract", function () {
             });
 
             it("Should fail if unregistering by not domain owner", async function () {
-                const { domainsContract, ether, addr1 } = contractState;
+                const { domainsContract, addr1 } = contractState;
 
                 await domainsContract.registerDomain('com', { value:  ether });
 
@@ -104,7 +104,7 @@ describe("DomainRegistry contract", function () {
             });
 
             it("Should fail if unregistering free domain", async function () {
-                const { domainsContract, ether, addr1 } = contractState;
+                const { domainsContract, addr1 } = contractState;
 
                 await expect(domainsContract
                     .connect(addr1)
