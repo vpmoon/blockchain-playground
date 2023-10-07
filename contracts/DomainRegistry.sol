@@ -9,7 +9,7 @@ struct DomainDetails {
 
 uint256 constant DEPOSIT_PRICE = 1 ether;
 
-contract RegisterDomains {
+contract DomainRegistry {
     address payable public owner;
     mapping(string => DomainDetails) domains;
 

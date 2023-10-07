@@ -1,4 +1,4 @@
-import { RegisterDomainsFixture } from "./RegisterDomains.types";
+import { DomainRegistryFixture } from "./DomainRegistry.types";
 
 const { expect } = require("chai");
 const {
@@ -7,12 +7,12 @@ const {
 const { ethers } = require("hardhat");
 import { AddressZero } from "@ethersproject/constants";
 
-describe("RegisterDomains contract", function () {
-    let contractState: RegisterDomainsFixture;
+describe("DomainRegistry contract", function () {
+    let contractState: DomainRegistryFixture;
 
-    async function deployTokenFixture(): Promise<RegisterDomainsFixture> {
+    async function deployTokenFixture(): Promise<DomainRegistryFixture> {
         const [owner, addr1] = await ethers.getSigners();
-        const domainsContract = await ethers.deployContract("RegisterDomains");
+        const domainsContract = await ethers.deployContract("DomainRegistry");
         const ether = ethers.parseEther("1");
 
         await domainsContract.waitForDeployment();
