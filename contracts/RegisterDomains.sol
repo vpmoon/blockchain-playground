@@ -16,6 +16,22 @@ contract RegisterDomains {
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
+    modifier registerIfNotExists(string memory domainName) {
+        require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
+
+        DomainDetails memory existingDomain = getDomain(domainName);
+        require(existingDomain.deposit == 0, "Domain is already reserved");
+        _;
+    }
+
+    modifier unregisterOwnerCheck(string memory domainName) {
+        DomainDetails memory existingDomain = getDomain(domainName);
+
+        require(existingDomain.deposit != 0, "Domain is not registered yet");
+        require(msg.sender == existingDomain.controller, "Domain should be unregistered by the domain owner");
+        _;
+    }
+
     constructor() {
         owner = payable(msg.sender);
     }
@@ -36,22 +52,12 @@ contract RegisterDomains {
         delete domains[domainName];
     }
 
-    function registerDomain(string memory domainName) external payable {
-        require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
-
-        DomainDetails memory existingDomain = getDomain(domainName);
-        require(existingDomain.deposit == 0, "Domain is already reserved");
-
+    function registerDomain(string memory domainName) external payable registerIfNotExists(domainName) {
         createDomain(domainName);
         emit DomainRegistered(msg.sender, domainName);
     }
 
-    function unregisterDomain(string memory domainName) external payable {
-        DomainDetails memory existingDomain = getDomain(domainName);
-
-        require(existingDomain.deposit != 0, "Domain is not registered yet");
-        require(msg.sender == existingDomain.controller, "Domain should be unregistered by the domain owner");
-
+    function unregisterDomain(string memory domainName) external payable unregisterOwnerCheck(domainName) {
         deleteDomain(domainName);
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);
