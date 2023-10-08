@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import "./DomainParserLibrary.sol";
+
 uint256 constant DEPOSIT_PRICE = 1 ether;
 
 contract DomainRegistry {
@@ -42,5 +44,9 @@ contract DomainRegistry {
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);
         emit DomainReleased(msg.sender, domainName);
+    }
+
+    function calculateSqrt(uint y) external view returns (uint) {
+        return DomainParserLibrary.getBalance();
     }
 }

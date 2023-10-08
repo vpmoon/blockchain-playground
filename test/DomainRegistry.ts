@@ -12,8 +12,14 @@ describe("DomainRegistry contract", function () {
     const ether = ethers.parseEther("1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
+        const domainParserLibrary = await ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary");
+
         const [owner, addr1] = await ethers.getSigners();
-        const domainsContract = await ethers.deployContract("DomainRegistry");
+        const domainsContract = await ethers.deployContract("DomainRegistry", {
+            libraries: {
+                DomainParserLibrary: domainParserLibrary
+            }
+        });
 
         await domainsContract.waitForDeployment();
 
@@ -112,6 +118,15 @@ describe("DomainRegistry contract", function () {
                     .to.be.revertedWith("Domain is not registered yet");
             });
         });
+
+        describe('test lib', function () {
+            it("test lib", async function () {
+                const { domainsContract, addr1 } = contractState;
+
+                const result = await domainsContract.calculateSqrt(4);
+                console.log(result)
+            });
+        })
     });
 
 });
