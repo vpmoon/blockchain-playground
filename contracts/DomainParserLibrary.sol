@@ -2,11 +2,56 @@
 pragma solidity ^0.8.17;
 
 library DomainParserLibrary {
-    function sqrt(uint y) public pure returns (uint z) {
-        return y * y;
+
+    function substring(string memory str, uint8 startIndex) public pure returns (string memory) {
+        bytes memory strBytes = bytes(str); // TODO try modifier
+        require(startIndex < strBytes.length, "Start index out of bounds");
+
+        bytes memory result = new bytes(strBytes.length - startIndex);
+        for (uint8 i = startIndex; i < strBytes.length; i++) {
+            result[i - startIndex] = strBytes[i];
+        }
+
+        return string(result);
     }
 
-    function getBalance() public view returns (uint) {
-        return address(this).balance;
+    function stripProtocol(string memory url, string memory symbol) public pure returns (string memory) {
+        uint8 protocolIndex = indexOf(url, symbol);
+
+        if (protocolIndex == type(uint8).max) {
+            return url;
+        }
+
+        return substring(url, protocolIndex + 3);
+    }
+
+    function indexOf(string memory str, string memory substr) public pure returns (uint8) {
+        bytes memory strBytes = bytes(str);
+        bytes memory substrBytes = bytes(substr);
+
+        // TODO try to search starting from substring
+        for (uint8 i = 0; i < strBytes.length - substrBytes.length + 1; i++) {
+            bool found = true;
+            for (uint8 j = 0; j < substrBytes.length; j++) {
+                if (strBytes[i + j] != substrBytes[j]) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) {
+                return i;
+            }
+        }
+        return type(uint8).max;
+    }
+
+    // function substring() public pure returns (string memory) {
+    function getRootDomain(string memory str) public pure returns (string memory) {
+        return stripProtocol(str, "://");
+    }
+
+    function getParentDomain(string memory str) public pure returns (string memory) {
+        string memory test = getRootDomain(str);
+        return test;
     }
 }

@@ -46,7 +46,5 @@ contract DomainRegistry {
         emit DomainReleased(msg.sender, domainName);
     }
 
-    function calculateSqrt(uint y) external view returns (uint) {
-        return DomainParserLibrary.sqrt(y);
-    }
+
 }

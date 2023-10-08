@@ -19,14 +19,46 @@ describe("DomainParserLibrary contract", function () {
         contractState = await loadFixture(deployTokenFixture);
     });
 
-    describe("Deployment", function () {
-        describe('Tracking events', function () {
-            it("Should catch events when register and release", async function () {
-                const { domainParserLibrary } = contractState;
-                const res = await domainParserLibrary.sqrt(5);
-                expect(res).to.equal(25)
-            });
+    describe('Tracking events', function () {
+        it("substring", async function () {
+            const { domainParserLibrary } = contractState;
+            const res = await domainParserLibrary.substring('https://stg0.gov.ua', 8);
+
+            expect(res).to.equal('stg0.gov.ua');
+        });
+
+        it("getRootDomain", async function () {
+            const { domainParserLibrary } = contractState;
+
+            const res1 = await domainParserLibrary.getRootDomain('https://stg0.gov.ua');
+            expect(res1).to.equal('stg0.gov.ua');
+
+            const res2 = await domainParserLibrary.getRootDomain('stg0.gov.ua');
+            expect(res2).to.equal('stg0.gov.ua');
+        });
+
+        it("getParentDomain", async function () {
+            const { domainParserLibrary } = contractState;
+
+            const res1 = await domainParserLibrary.getRootDomain('https://demo.stg0.gov.ua');
+            expect(res1).to.equal('stg0.gov.ua');
+
+            const res2 = await domainParserLibrary.getRootDomain('demo.stg0.gov.ua');
+            expect(res2).to.equal('stg0.gov.ua');
+        });
+
+        it("Should return domain name from address with protocol", async function () {
+            const { domainParserLibrary } = contractState;
+            const res = await domainParserLibrary.getRootDomain('https://stg0.gov.ua');
+
+            expect(res).to.equal('stg0.gov.ua');
+        });
+
+        it("Should return parent domain", async function () {
+            const { domainParserLibrary } = contractState;
+            const res = await domainParserLibrary.getParentDomain('https://stg0.gov.ua');
+
+            expect(res).to.equal('gov.ua');
         });
     });
-
 });
