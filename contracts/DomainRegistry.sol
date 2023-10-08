@@ -47,6 +47,6 @@ contract DomainRegistry {
     }
 
     function calculateSqrt(uint y) external view returns (uint) {
-        return DomainParserLibrary.getBalance();
+        return DomainParserLibrary.sqrt(y);
     }
 }

@@ -124,7 +124,7 @@ describe("DomainRegistry contract", function () {
                 const { domainsContract, addr1 } = contractState;
 
                 const result = await domainsContract.calculateSqrt(4);
-                console.log(result)
+                expect(result).to.equal(16)
             });
         })
     });
