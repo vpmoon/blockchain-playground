@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-library StringParserLibrary {
-    uint256 constant NOT_EXISTING_VALUE = type(uint8).max;
+uint8 constant NOT_EXISTING_VALUE = type(uint8).max;
 
+library StringParserLibrary {
     function substring(string memory str, uint8 startIndex) public pure returns (string memory) {
         bytes memory strBytes = bytes(str); // TODO try modifier
         require(startIndex < strBytes.length, "Start index out of bounds");
@@ -19,7 +19,7 @@ library StringParserLibrary {
     function stripAfter(string memory url, string memory symbol) public pure returns (string memory) {
         uint8 protocolIndex = indexOf(url, symbol);
 
-        if (protocolIndex == type(uint8).max) {
+        if (protocolIndex == NOT_EXISTING_VALUE) {
             return url;
         }
 
@@ -45,6 +45,6 @@ library StringParserLibrary {
                 return i;
             }
         }
-        return type(uint8).max;
+        return NOT_EXISTING_VALUE;
     }
 }
