@@ -40,25 +40,11 @@ describe("DomainParserLibrary contract", function () {
         it("getParentDomain", async function () {
             const { domainParserLibrary } = contractState;
 
-            const res1 = await domainParserLibrary.getRootDomain('https://demo.stg0.gov.ua');
+            const res1 = await domainParserLibrary.getParentDomain('https://demo.stg0.gov.ua');
             expect(res1).to.equal('stg0.gov.ua');
 
-            const res2 = await domainParserLibrary.getRootDomain('demo.stg0.gov.ua');
+            const res2 = await domainParserLibrary.getParentDomain('demo.stg0.gov.ua');
             expect(res2).to.equal('stg0.gov.ua');
-        });
-
-        it("Should return domain name from address with protocol", async function () {
-            const { domainParserLibrary } = contractState;
-            const res = await domainParserLibrary.getRootDomain('https://stg0.gov.ua');
-
-            expect(res).to.equal('stg0.gov.ua');
-        });
-
-        it("Should return parent domain", async function () {
-            const { domainParserLibrary } = contractState;
-            const res = await domainParserLibrary.getParentDomain('https://stg0.gov.ua');
-
-            expect(res).to.equal('gov.ua');
         });
     });
 });

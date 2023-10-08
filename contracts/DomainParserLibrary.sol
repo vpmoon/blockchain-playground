@@ -22,7 +22,9 @@ library DomainParserLibrary {
             return url;
         }
 
-        return substring(url, protocolIndex + 3);
+        bytes memory symbolBytes = bytes(symbol);
+        uint8 symbolBytesLength = uint8(symbolBytes.length);
+        return substring(url, protocolIndex + symbolBytesLength);
     }
 
     function indexOf(string memory str, string memory substr) public pure returns (uint8) {
@@ -45,13 +47,13 @@ library DomainParserLibrary {
         return type(uint8).max;
     }
 
-    // function substring() public pure returns (string memory) {
     function getRootDomain(string memory str) public pure returns (string memory) {
         return stripProtocol(str, "://");
     }
 
     function getParentDomain(string memory str) public pure returns (string memory) {
         string memory test = getRootDomain(str);
-        return test;
+
+        return stripProtocol(test, ".");
     }
 }
