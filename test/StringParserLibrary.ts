@@ -15,12 +15,11 @@ describe("StringParserLibrary contract", function () {
         stringParserLibrary = await loadFixture(deployTokenFixture);
     });
 
-    describe('Tracking events', function () {
+    it("substring", async function () {
+        const res = await stringParserLibrary.substring('https://stg0.gov.ua', 8);
 
-        it("substring", async function () {
-            const res = await stringParserLibrary.substring('https://stg0.gov.ua', 8);
-
-            expect(res).to.equal('stg0.gov.ua');
-        });
+        expect(res).to.equal('stg0.gov.ua');
     });
+
+
 });

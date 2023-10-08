@@ -15,7 +15,7 @@ library StringParserLibrary {
         return string(result);
     }
 
-    function stripProtocol(string memory url, string memory symbol) public pure returns (string memory) {
+    function stripAfter(string memory url, string memory symbol) public pure returns (string memory) {
         uint8 protocolIndex = indexOf(url, symbol);
 
         if (protocolIndex == type(uint8).max) {

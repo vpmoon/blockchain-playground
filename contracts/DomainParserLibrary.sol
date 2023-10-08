@@ -5,12 +5,12 @@ import "./StringParserLibrary.sol";
 
 library DomainParserLibrary {
     function getRootDomain(string memory str) public pure returns (string memory) {
-        return StringParserLibrary.stripProtocol(str, "://");
+        return StringParserLibrary.stripAfter(str, "://");
     }
 
     function getParentDomain(string memory str) public pure returns (string memory) {
         string memory rootDomain = getRootDomain(str);
 
-        return StringParserLibrary.stripProtocol(rootDomain, ".");
+        return StringParserLibrary.stripAfter(rootDomain, ".");
     }
 }
