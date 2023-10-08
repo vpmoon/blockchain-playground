@@ -1,5 +1,3 @@
-import { DomainParserLibraryFixture } from "./DomainParserLibraryFixture.types";
-
 const { expect } = require("chai");
 const {
     loadFixture,
@@ -7,29 +5,25 @@ const {
 const { ethers } = require("hardhat");
 
 describe("DomainParserLibrary contract", function () {
-    let contractState: DomainParserLibraryFixture;
+    let domainParserLibrary: ethers.Contract;
 
-    async function deployTokenFixture(): Promise<DomainParserLibraryFixture> {
-        const domainParserLibrary = await ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary");
+    async function deployTokenFixture(): Promise<ethers.Contract> {
+        const stringParserLibrary = await ethers.deployContract("contracts/StringParserLibrary.sol:StringParserLibrary");
 
-        return { domainParserLibrary };
+        return ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
+            libraries: {
+                StringParserLibrary: stringParserLibrary
+            }
+        });
     }
 
     beforeEach(async () => {
-        contractState = await loadFixture(deployTokenFixture);
+        domainParserLibrary = await loadFixture(deployTokenFixture);
     });
 
     describe('Tracking events', function () {
-        it("substring", async function () {
-            const { domainParserLibrary } = contractState;
-            const res = await domainParserLibrary.substring('https://stg0.gov.ua', 8);
-
-            expect(res).to.equal('stg0.gov.ua');
-        });
 
         it("getRootDomain", async function () {
-            const { domainParserLibrary } = contractState;
-
             const res1 = await domainParserLibrary.getRootDomain('https://stg0.gov.ua');
             expect(res1).to.equal('stg0.gov.ua');
 
@@ -38,8 +32,6 @@ describe("DomainParserLibrary contract", function () {
         });
 
         it("getParentDomain", async function () {
-            const { domainParserLibrary } = contractState;
-
             const res1 = await domainParserLibrary.getParentDomain('https://demo.stg0.gov.ua');
             expect(res1).to.equal('stg0.gov.ua');
 

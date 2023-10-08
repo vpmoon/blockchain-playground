@@ -174,14 +174,6 @@ describe.skip("DomainRegistry contract", function () {
             });
         });
 
-        // describe('test lib', function () {
-        //     it("test lib", async function () {
-        //         const { domainsContract, addr1 } = contractState;
-        //
-        //         const result = await domainsContract.calculateSqrt(4);
-        //         expect(result).to.equal(16)
-        //     });
-        // })
     });
 
 });

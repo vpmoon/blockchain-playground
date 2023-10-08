@@ -45,6 +45,4 @@ contract DomainRegistry {
         payable(msg.sender).transfer(DEPOSIT_PRICE);
         emit DomainReleased(msg.sender, domainName);
     }
-
-
 }
