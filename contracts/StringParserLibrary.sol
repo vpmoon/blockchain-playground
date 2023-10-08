@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-uint8 constant NOT_EXISTING_VALUE = type(uint8).max;
-
 library StringParserLibrary {
+    uint8 constant NOT_EXISTING_VALUE = type(uint8).max;
+
     function substring(string memory str, uint8 startIndex) public pure returns (string memory) {
         bytes memory strBytes = bytes(str); // TODO try modifier
         require(startIndex < strBytes.length, "Start index out of bounds");
