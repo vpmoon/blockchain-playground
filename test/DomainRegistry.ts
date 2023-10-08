@@ -53,9 +53,9 @@ describe("DomainRegistry contract", function () {
 
                 await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
 
-                const domainDetails = await domainsContract.getDomain('com');
+                const address = await domainsContract.getDomain('com');
 
-                expect(domainDetails.controller).to.equal(addr1.address);
+                expect(address).to.equal(addr1.address);
             });
 
             it("Should fail if not enough etn for registering domain", async function () {
@@ -86,8 +86,8 @@ describe("DomainRegistry contract", function () {
                 const tx2 = await domainsContract.connect(addr1).unregisterDomain('com');
                 await expect(tx2).to.changeEtherBalances([addr1, domainsContract], [ether, -ether]);
 
-                const domainDetails = await domainsContract.getDomain('com');
-                expect(domainDetails.controller).to.equal(AddressZero);
+                const address = await domainsContract.getDomain('com');
+                expect(address).to.equal(AddressZero);
 
 
             });
