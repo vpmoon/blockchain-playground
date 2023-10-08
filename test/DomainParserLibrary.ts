@@ -5,7 +5,6 @@ const {
     loadFixture,
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
-import { AddressZero } from "@ethersproject/constants";
 
 describe("DomainParserLibrary contract", function () {
     let contractState: DomainParserLibraryFixture;

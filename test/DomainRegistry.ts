@@ -73,6 +73,61 @@ describe("DomainRegistry contract", function () {
                     .to.be.revertedWith("Insufficient ETH sent");
             });
 
+            ['com', 'google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
+                it(`Should fail if ${domain} domain is already reserved`, async function () {
+                    const { domainsContract } = contractState;
+
+                    domainsContract.registerDomain(domain, { value: ether })
+
+                    await expect(domainsContract.registerDomain(domain, { value: ether }))
+                        .to.be.revertedWith("Domain is already reserved");
+                });
+            });
+
+            ['com', 'google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
+                it(`Should fail if ${domain} is with protocol, but stored without`, async function () {
+                    const { domainsContract } = contractState;
+
+                    domainsContract.registerDomain(domain, { value: ether })
+
+                    await expect(domainsContract.registerDomain(`https://${domain}`, { value: ether }))
+                        .to.be.revertedWith("Domain is already reserved");
+                });
+            });
+
+            ['com', 'google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
+                it(`Should fail if ${domain} is without protocol, but stored with it`, async function () {
+                    const { domainsContract } = contractState;
+
+                    domainsContract.registerDomain(`https://${domain}`, { value: ether })
+
+                    await expect(domainsContract.registerDomain(domain, { value: ether }))
+                        .to.be.revertedWith("Domain is already reserved");
+                });
+            });
+
+            ['google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
+                it(`Should not allow to register ${domain} if parent domain doesn't exists`, async function () {
+                    const { domainsContract } = contractState;
+
+                    domainsContract.registerDomain(domain, { value: ether })
+
+                    await expect(domainsContract.registerDomain(domain, { value: ether }))
+                        .to.be.revertedWith("Parent domain doesn't exist");
+                });
+            });
+
+            ['google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
+                it(`Should not allow to register ${domain} if parent domain doesn't exists`, async function () {
+                    const { domainsContract } = contractState;
+
+                    domainsContract.registerDomain(domain, { value: ether })
+
+                    await expect(domainsContract.registerDomain(domain, { value: ether }))
+                        .to.be.revertedWith("Parent domain doesn't exist");
+                });
+            });
+
             it("Should take deposit as 1 ether when assign domain", async function () {
                 const { domainsContract, addr1 } = contractState;
 
