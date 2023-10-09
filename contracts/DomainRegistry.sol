@@ -13,23 +13,29 @@ contract DomainRegistry {
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    modifier registerIfNotExists(string memory domainName) {
+    modifier checkSufficientEtn() {
         require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
+        _;
+    }
 
-        require(domains[domainName] == address(0), "Domain is already reserved");
+    modifier registerIfNotExists(string memory domainName) {
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+
+        bool isTopLevel = DomainParserLibrary.isTopLevelDomain(rootDomain);
+        if (!isTopLevel) {
+            string memory parentDomain = DomainParserLibrary.getParentDomain(rootDomain);
+            require(domains[parentDomain] != address(0), "Parent domain should be reserved before registering subdomains");
+        }
+
+        require(domains[rootDomain] == address(0), "Domain is already reserved");
         _;
     }
 
     modifier unregisterOwnerCheck(string memory domainName) {
-        require(domains[domainName] != address(0), "Domain is not registered yet");
-        require(domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
-        _;
-    }
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
-    modifier checkParentDomainExists(string memory domainName) {
-        string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
-
-        require(bytes(parentDomain).length > 0, "Parent domain doesn't exist");
+        require(domains[rootDomain] != address(0), "Domain is not registered yet");
+        require(domains[rootDomain] == msg.sender, "Domain should be unregistered by the domain owner");
         _;
     }
 
@@ -41,14 +47,14 @@ contract DomainRegistry {
         return domains[domainName];
     }
 
-    function registerDomain(string memory domainName) external payable registerIfNotExists(domainName) {
+    function registerDomain(string memory domainName) external payable registerIfNotExists(domainName) checkSufficientEtn() {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
         domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
-    function unregisterDomain(string memory domainName) external payable unregisterOwnerCheck(domainName) {
+    function unregisterDomain(string memory domainName) external payable unregisterOwnerCheck(domainName) checkSufficientEtn() {
         delete domains[domainName];
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);

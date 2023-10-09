@@ -13,4 +13,11 @@ library DomainParserLibrary {
 
         return StringParserLibrary.stripAfter(rootDomain, ".");
     }
+
+    function isTopLevelDomain(string memory str) public pure returns (bool) {
+        string memory rootDomain = getRootDomain(str);
+        string memory parentDomain = getParentDomain(str);
+
+        return keccak256(bytes(rootDomain)) == keccak256(bytes(parentDomain));
+    }
 }
