@@ -59,7 +59,7 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe.only('Domain registration', function () {
+        describe('Domain registration', function () {
             it("Should register domain and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 

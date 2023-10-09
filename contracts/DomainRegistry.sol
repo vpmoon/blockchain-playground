@@ -39,7 +39,8 @@ contract DomainRegistry {
         _;
     }
 
-    modifier unregisterOwnerCheck(string memory domainName) {
+    modifier checkDomainReleasing(string memory domainName) {
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         require(domains[domainName] != address(0), "Domain is not registered yet");
         require(domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
         _;
@@ -63,7 +64,7 @@ contract DomainRegistry {
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
-    function unregisterDomain(string memory domainName) external payable unregisterOwnerCheck(domainName) checkSufficientEtn() {
+    function unregisterDomain(string memory domainName) external payable checkDomainLength(domainName) checkDomainReleasing(domainName) {
         delete domains[domainName];
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);
