@@ -5,7 +5,7 @@ library StringParserLibrary {
     uint8 constant NOT_EXISTING_VALUE = type(uint8).max;
 
     function substring(string memory str, uint8 startIndex) public pure returns (string memory) {
-        bytes memory strBytes = bytes(str); // TODO try modifier
+        bytes memory strBytes = bytes(str);
         require(startIndex < strBytes.length, "Start index out of bounds");
 
         bytes memory result = new bytes(strBytes.length - startIndex);
@@ -32,7 +32,6 @@ library StringParserLibrary {
         bytes memory strBytes = bytes(str);
         bytes memory substrBytes = bytes(substr);
 
-        // TODO try to search starting from substring
         for (uint8 i = 0; i < strBytes.length - substrBytes.length + 1; i++) {
             bool found = true;
             for (uint8 j = 0; j < substrBytes.length; j++) {
