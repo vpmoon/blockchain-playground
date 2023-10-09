@@ -79,6 +79,13 @@ describe("DomainRegistry contract", function () {
                     .to.be.revertedWith("Domain is already reserved");
             });
 
+            it(`Should fail if domain length is not valid`, async function () {
+                const { domainsContract } = contractState;
+
+                await expect(domainsContract.registerDomain('c', { value: ether }))
+                    .to.be.revertedWith("Domain length should be between 2 and 253");
+            });
+
             it("Should fail if not enough etn for registering domain", async function () {
                 const { domainsContract, addr1 } = contractState;
 
