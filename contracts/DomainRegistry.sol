@@ -17,13 +17,16 @@ contract DomainRegistry {
         _;
     }
 
-    modifier registerIfNotExists(string memory domainName) {
+    modifier checkDomainParent(string memory domainName) {
         bool isTopLevel = DomainParserLibrary.isTopLevelDomain(domainName);
         if (!isTopLevel) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
             require(domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
+        _;
+    }
 
+    modifier checkDomainAvailability(string memory domainName) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         require(domains[rootDomain] == address(0), "Domain is already reserved");
         _;
@@ -47,7 +50,11 @@ contract DomainRegistry {
         return domains[rootDomain];
     }
 
-    function registerDomain(string memory domainName) external payable registerIfNotExists(domainName) checkSufficientEtn() {
+    function registerDomain(string memory domainName) external payable
+        checkDomainParent(domainName)
+        checkDomainAvailability(domainName)
+        checkSufficientEtn()
+    {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
         domains[rootDomain] = msg.sender;

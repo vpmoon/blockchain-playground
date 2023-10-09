@@ -60,7 +60,7 @@ describe("DomainRegistry contract", function () {
         });
 
         describe.only('Domain registration', function () {
-            it("Should register top level domain and emit event", async function () {
+            it("Should register domain and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 
                 await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
@@ -70,7 +70,7 @@ describe("DomainRegistry contract", function () {
                 expect(address).to.equal(addr1.address);
             });
 
-            it(`Should fail if top-level domain is already reserved`, async function () {
+            it(`Should fail if domain is already reserved`, async function () {
                 const { domainsContract } = contractState;
 
                 domainsContract.registerDomain('com', { value: ether })
