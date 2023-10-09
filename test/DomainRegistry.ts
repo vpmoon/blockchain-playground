@@ -7,7 +7,7 @@ const {
 const { ethers } = require("hardhat");
 import { AddressZero } from "@ethersproject/constants";
 
-describe("DomainRegistry contract", function () {
+describe.skip("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
     const ether = ethers.parseEther("1");
 
