@@ -1,7 +1,18 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const contract = await ethers.deployContract("DomainRegistry");
+  const stringParserLibrary = await ethers.deployContract("contracts/StringParserLibrary.sol:StringParserLibrary");
+  const domainParserLibrary = await ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
+    libraries: {
+      StringParserLibrary: stringParserLibrary
+    }
+  });
+
+  const contract = await ethers.deployContract("DomainRegistry", {
+    libraries: {
+      DomainParserLibrary: domainParserLibrary
+    }
+  });
 
   await contract.waitForDeployment();
 }
