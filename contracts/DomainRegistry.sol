@@ -26,6 +26,13 @@ contract DomainRegistry {
         _;
     }
 
+    modifier checkParentDomainExists(string memory domainName) {
+        string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
+
+        require(bytes(parentDomain).length > 0, "Parent domain doesn't exist");
+        _;
+    }
+
     constructor() {
         owner = payable(msg.sender);
     }
@@ -35,8 +42,10 @@ contract DomainRegistry {
     }
 
     function registerDomain(string memory domainName) external payable registerIfNotExists(domainName) {
-        domains[domainName] = msg.sender;
-        emit DomainRegistered(msg.sender, domainName);
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+
+        domains[rootDomain] = msg.sender;
+        emit DomainRegistered(msg.sender, rootDomain);
     }
 
     function unregisterDomain(string memory domainName) external payable unregisterOwnerCheck(domainName) {
@@ -44,9 +53,5 @@ contract DomainRegistry {
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);
         emit DomainReleased(msg.sender, domainName);
-    }
-
-    function calculateSqrt(string memory url) external view returns ( string memory) {
-        return DomainParserLibrary.getRootDomain(url);
     }
 }

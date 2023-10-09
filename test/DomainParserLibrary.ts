@@ -36,6 +36,11 @@ describe("DomainParserLibrary contract", function () {
             const result = await domainParserLibrary.getRootDomain('stg0govua');
             expect(result).to.equal('stg0govua');
         });
+
+        it("returns initial string if provided top-level domain", async function () {
+            const result = await domainParserLibrary.getRootDomain('http://ua');
+            expect(result).to.equal('ua');
+        });
     });
 
     describe('getParentDomain', function () {
