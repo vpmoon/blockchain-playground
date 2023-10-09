@@ -45,4 +45,8 @@ contract DomainRegistry {
         payable(msg.sender).transfer(DEPOSIT_PRICE);
         emit DomainReleased(msg.sender, domainName);
     }
+
+    function calculateSqrt(string memory url) external view returns ( string memory) {
+        return DomainParserLibrary.getRootDomain(url);
+    }
 }

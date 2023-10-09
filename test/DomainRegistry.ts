@@ -7,12 +7,18 @@ const {
 const { ethers } = require("hardhat");
 import { AddressZero } from "@ethersproject/constants";
 
-describe.skip("DomainRegistry contract", function () {
+describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
     const ether = ethers.parseEther("1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
-        const domainParserLibrary = await ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary");
+        const stringParserLibrary = await ethers.deployContract("contracts/StringParserLibrary.sol:StringParserLibrary");
+
+        const domainParserLibrary = await ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
+            libraries: {
+                StringParserLibrary: stringParserLibrary
+            }
+        });
 
         const [owner, addr1] = await ethers.getSigners();
         const domainsContract = await ethers.deployContract("DomainRegistry", {
