@@ -1,6 +1,5 @@
-//SPDX-License-Identifier: UNLICENSED
-
-pragma solidity ^0.8.0;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
 
 import "./DomainParserLibrary.sol";
 
@@ -19,14 +18,13 @@ contract DomainRegistry {
     }
 
     modifier registerIfNotExists(string memory domainName) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-
-        bool isTopLevel = DomainParserLibrary.isTopLevelDomain(rootDomain);
+        bool isTopLevel = DomainParserLibrary.isTopLevelDomain(domainName);
         if (!isTopLevel) {
-            string memory parentDomain = DomainParserLibrary.getParentDomain(rootDomain);
-            require(domains[parentDomain] != address(0), "Parent domain should be reserved before registering subdomains");
+            string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
+            require(domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
 
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         require(domains[rootDomain] == address(0), "Domain is already reserved");
         _;
     }
@@ -44,7 +42,9 @@ contract DomainRegistry {
     }
 
     function getDomain(string memory domainName) public view returns (address) {
-        return domains[domainName];
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+
+        return domains[rootDomain];
     }
 
     function registerDomain(string memory domainName) external payable registerIfNotExists(domainName) checkSufficientEtn() {
@@ -55,9 +55,11 @@ contract DomainRegistry {
     }
 
     function unregisterDomain(string memory domainName) external payable unregisterOwnerCheck(domainName) checkSufficientEtn() {
-        delete domains[domainName];
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+
+        delete domains[rootDomain];
 
         payable(msg.sender).transfer(DEPOSIT_PRICE);
-        emit DomainReleased(msg.sender, domainName);
+        emit DomainReleased(msg.sender, rootDomain);
     }
 }

@@ -5,7 +5,7 @@ import "./StringParserLibrary.sol";
 
 library DomainParserLibrary {
     function getRootDomain(string memory str) public pure returns (string memory) {
-        return StringParserLibrary.stripAfter(str, "://");
+        return StringParserLibrary.stripAfter(str, "//");
     }
 
     function getParentDomain(string memory str) public pure returns (string memory) {

@@ -37,6 +37,13 @@ describe("StringParserLibrary contract", function () {
 
             expect(res).to.equal('https://stg0.gov.ua');
         });
+
+        it("test", async function () {
+            const test = 'stg0.new.net.ua';
+            const res = await stringParserLibrary.indexOf(test, '://');
+
+            expect(res).to.equal(255);
+        });
     });
 
     describe('indexOf', () => {

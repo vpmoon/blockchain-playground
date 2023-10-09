@@ -59,4 +59,18 @@ describe("DomainParserLibrary contract", function () {
             expect(result).to.equal('stg0govua');
         });
     });
+
+    describe('isTopLevelDomain ', function () {
+        it("returns true if url is top domain", async function () {
+            const result = await domainParserLibrary.isTopLevelDomain('ua');
+
+            expect(result).to.be.true;
+        });
+
+        it("returns true if url is not a top domain", async function () {
+            const result = await domainParserLibrary.isTopLevelDomain("https://stg0.new.net.ua");
+
+            expect(result).to.be.false;
+        });
+    });
 });

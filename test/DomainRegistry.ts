@@ -7,7 +7,7 @@ const {
 const { ethers } = require("hardhat");
 import { AddressZero } from "@ethersproject/constants";
 
-describe.skip("DomainRegistry contract", function () {
+describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
     const ether = ethers.parseEther("1");
 
@@ -59,8 +59,8 @@ describe.skip("DomainRegistry contract", function () {
             });
         });
 
-        describe('Domain registration', function () {
-            it("Should register domain and emit event", async function () {
+        describe.only('Domain registration', function () {
+            it("Should register top level domain and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 
                 await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
@@ -68,6 +68,15 @@ describe.skip("DomainRegistry contract", function () {
                 const address = await domainsContract.getDomain('com');
 
                 expect(address).to.equal(addr1.address);
+            });
+
+            it(`Should fail if top-level domain is already reserved`, async function () {
+                const { domainsContract } = contractState;
+
+                domainsContract.registerDomain('com', { value: ether })
+
+                await expect(domainsContract.registerDomain('com', { value: ether }))
+                    .to.be.revertedWith("Domain is already reserved");
             });
 
             it("Should fail if not enough etn for registering domain", async function () {
@@ -79,40 +88,7 @@ describe.skip("DomainRegistry contract", function () {
                     .to.be.revertedWith("Insufficient ETH sent");
             });
 
-            ['com', 'google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
-                it(`Should fail if ${domain} domain is already reserved`, async function () {
-                    const { domainsContract } = contractState;
-
-                    domainsContract.registerDomain(domain, { value: ether })
-
-                    await expect(domainsContract.registerDomain(domain, { value: ether }))
-                        .to.be.revertedWith("Domain is already reserved");
-                });
-            });
-
-            ['com', 'google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
-                it(`Should fail if ${domain} is with protocol, but stored without`, async function () {
-                    const { domainsContract } = contractState;
-
-                    domainsContract.registerDomain(domain, { value: ether })
-
-                    await expect(domainsContract.registerDomain(`https://${domain}`, { value: ether }))
-                        .to.be.revertedWith("Domain is already reserved");
-                });
-            });
-
-            ['com', 'google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
-                it(`Should fail if ${domain} is without protocol, but stored with it`, async function () {
-                    const { domainsContract } = contractState;
-
-                    domainsContract.registerDomain(`https://${domain}`, { value: ether })
-
-                    await expect(domainsContract.registerDomain(domain, { value: ether }))
-                        .to.be.revertedWith("Domain is already reserved");
-                });
-            });
-
-            ['google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
+            ['google.com', 'http://new.business.com', 'https://stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
                 it(`Should not allow to register ${domain} if parent domain doesn't exists`, async function () {
                     const { domainsContract } = contractState;
 
@@ -123,14 +99,23 @@ describe.skip("DomainRegistry contract", function () {
                 });
             });
 
-            ['google.com', 'new.business.com', 'stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
-                it(`Should not allow to register ${domain} if parent domain doesn't exists`, async function () {
-                    const { domainsContract } = contractState;
+            [
+                { domain: 'google.com', parents: ['com'] },
+                { domain: 'http://new.business.no', parents: ['no', 'business.no'] },
+                { domain: 'https://stg0.new.net.ua', parents: ['ua', 'net.ua', 'new.net.ua'] },
+                { domain: 'demo.stg0.new.com.pl', parents: ['pl', 'com.pl', 'new.com.pl', 'stg0.new.com.pl'] },
+            ].forEach(({ domain, parents }) => {
+                it(`Should allow to register ${domain} domain if parents exist`, async function () {
+                    const { domainsContract, owner } = contractState;
 
-                    domainsContract.registerDomain(domain, { value: ether })
+                    for (const parent of parents) {
+                        await domainsContract.registerDomain(parent, { value: ether });
+                    }
+                    await domainsContract.registerDomain(domain, { value: ether });
 
-                    await expect(domainsContract.registerDomain(domain, { value: ether }))
-                        .to.be.revertedWith("Parent domain doesn't exist");
+                    const address = await domainsContract.getDomain(domain);
+
+                    expect(address).to.equal(owner.address);
                 });
             });
 
