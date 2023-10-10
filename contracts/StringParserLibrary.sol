@@ -17,15 +17,15 @@ library StringParserLibrary {
     }
 
     function stripAfter(string memory url, string memory symbol) public pure returns (string memory) {
-        uint8 protocolIndex = indexOf(url, symbol);
+        uint8 symbolIndex = indexOf(url, symbol);
 
-        if (protocolIndex == NOT_EXISTING_VALUE) {
+        if (symbolIndex == NOT_EXISTING_VALUE) {
             return url;
         }
 
         bytes memory symbolBytes = bytes(symbol);
         uint8 symbolBytesLength = uint8(symbolBytes.length);
-        return substring(url, protocolIndex + symbolBytesLength);
+        return substring(url, symbolIndex + symbolBytesLength);
     }
 
     function indexOf(string memory str, string memory substr) public pure returns (uint8) {
