@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
 library StringParserLibrary {
     uint8 constant NOT_EXISTING_VALUE = type(uint8).max;

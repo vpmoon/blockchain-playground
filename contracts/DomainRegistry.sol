@@ -1,16 +1,29 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "./DomainParserLibrary.sol";
 
 uint256 constant DEPOSIT_PRICE = 1 ether;
 
 contract DomainRegistry {
+    using EnumerableMap for EnumerableMap.UintToUintMap;
+    // Declare the map
+    EnumerableMap.UintToUintMap private domainLevelPrices;
+
     address payable public owner;
     mapping(string => address) domains;
 
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
+
+    function getDomainLevelPrice(uint256 level) public view returns (uint256) {
+        return domainLevelPrices.get(level);
+    }
+
+    function setDomainLevelPrice(uint256 level, uint256 price) public {
+        domainLevelPrices.set(level, price);
+    }
 
     modifier checkSufficientEtn() {
         require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
@@ -18,8 +31,8 @@ contract DomainRegistry {
     }
 
     modifier checkDomainParent(string memory domainName) {
-        bool isTopLevel = DomainParserLibrary.isTopLevelDomain(domainName);
-        if (!isTopLevel) {
+        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
+        if (level != uint8(1)) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
             require(domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
@@ -56,9 +69,17 @@ contract DomainRegistry {
         return domains[rootDomain];
     }
 
+    function getPrice(string memory domainName) public view returns (address) {
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
+
+        return domains[rootDomain];
+    }
+
     function registerDomain(string memory domainName) external payable checkDomainLength(domainName) checkDomainParent(domainName) checkDomainAvailability(domainName) checkSufficientEtn()
     {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+        uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
 
         domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);

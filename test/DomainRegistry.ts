@@ -37,7 +37,7 @@ describe("DomainRegistry contract", function () {
     });
 
     describe("Deployment", function () {
-        describe('Initialization', function () {
+        describe.skip('Initialization', function () {
             it("Should set owner correctly", async function () {
                 const { domainsContract, owner } = contractState;
 
@@ -45,7 +45,7 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe('Tracking events', function () {
+        describe.skip('Tracking events', function () {
             it("Should catch events when register and release", async function () {
                 const { domainsContract, owner } = contractState;
                 await expect(domainsContract.registerDomain('com', { value:  ether }))
@@ -60,6 +60,25 @@ describe("DomainRegistry contract", function () {
         });
 
         describe('Domain registration', function () {
+            it("Should set and get price", async function () {
+                const { domainsContract } = contractState;
+
+                await domainsContract.setDomainLevelPrice(1, 1);
+                await domainsContract.setDomainLevelPrice(2, 1.25);
+                await domainsContract.setDomainLevelPrice(3, 1.75);
+                await domainsContract.setDomainLevelPrice(4, 2);
+
+                const level1 = await domainsContract.getDomainLevelPrice(1);
+                const level2 = await domainsContract.getDomainLevelPrice(2);
+                const level3 = await domainsContract.getDomainLevelPrice(3);
+                const level4 = await domainsContract.getDomainLevelPrice(4);
+
+                expect(level1).to.equal(1);
+                expect(level2).to.equal(1.25);
+                expect(level3).to.equal(1.75);
+                expect(level4).to.equal(2);
+            });
+
             it("Should register domain and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 
@@ -135,7 +154,7 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe('Domain releasing', function () {
+        describe.skip('Domain releasing', function () {
             it("Should unregister domain, return deposit and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 

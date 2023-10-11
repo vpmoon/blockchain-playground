@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
 import "./StringParserLibrary.sol";
 
@@ -14,10 +14,15 @@ library DomainParserLibrary {
         return StringParserLibrary.stripAfter(rootDomain, ".");
     }
 
-    function isTopLevelDomain(string memory str) public pure returns (bool) {
+    function getDomainLevel(string memory str) public pure returns (uint8) {
         string memory rootDomain = getRootDomain(str);
-        string memory parentDomain = getParentDomain(str);
 
-        return keccak256(bytes(rootDomain)) == keccak256(bytes(parentDomain));
+        return StringParserLibrary.countSymbolOccurrences(str, ".") + uint8(1);
+    }
+
+    function splitDomain(string memory str) public pure returns (string[] memory) {
+        string memory rootDomain = getRootDomain(str);
+
+        return StringParserLibrary.split(str, ".");
     }
 }
