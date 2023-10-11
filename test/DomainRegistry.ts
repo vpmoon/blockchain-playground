@@ -63,20 +63,20 @@ describe("DomainRegistry contract", function () {
             it("Should set and get price", async function () {
                 const { domainsContract } = contractState;
 
-                await domainsContract.setDomainLevelPrice(uint256(1), uint256(100));
-                await domainsContract.setDomainLevelPrice(uint256(2), uint256(150));
-                await domainsContract.setDomainLevelPrice(uint256(3), uint256(175));
-                await domainsContract.setDomainLevelPrice(uint256(4), uint256(200));
+                await domainsContract.setDomainLevelPrice(1, 175);
+                await domainsContract.setDomainLevelPrice(2, 150);
+                await domainsContract.setDomainLevelPrice(3, 125);
+                await domainsContract.setDomainLevelPrice(4, 100);
 
                 const level1 = await domainsContract.getDomainLevelPrice(1);
                 const level2 = await domainsContract.getDomainLevelPrice(2);
                 const level3 = await domainsContract.getDomainLevelPrice(3);
                 const level4 = await domainsContract.getDomainLevelPrice(4);
 
-                expect(level1).to.equal(1);
-                expect(level2).to.equal(1.25);
-                expect(level3).to.equal(1.75);
-                expect(level4).to.equal(2);
+                expect(level1).to.equal(175);
+                expect(level2).to.equal(150);
+                expect(level3).to.equal(125);
+                expect(level4).to.equal(100);
             });
 
             it("Should register domain and emit event", async function () {
