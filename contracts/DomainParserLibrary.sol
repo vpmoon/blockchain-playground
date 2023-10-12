@@ -15,14 +15,12 @@ library DomainParserLibrary {
     }
 
     function getDomainLevel(string memory str) public pure returns (uint8) {
-        string memory rootDomain = getRootDomain(str);
-
         return StringParserLibrary.countSymbolOccurrences(str, ".") + uint8(1);
     }
 
     function splitDomain(string memory str) public pure returns (string[] memory) {
         string memory rootDomain = getRootDomain(str);
 
-        return StringParserLibrary.split(str, ".");
+        return StringParserLibrary.split(rootDomain, ".");
     }
 }

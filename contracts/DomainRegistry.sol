@@ -4,11 +4,9 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "./DomainParserLibrary.sol";
 
-uint256 constant DEPOSIT_PRICE = 1 ether;
-
 contract DomainRegistry {
     using EnumerableMap for EnumerableMap.UintToUintMap;
-    // Declare the map
+
     EnumerableMap.UintToUintMap private domainLevelPrices;
 
     address payable public owner;
@@ -17,7 +15,10 @@ contract DomainRegistry {
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    function getDomainLevelPrice(uint256 level) public view returns (uint256) {
+    function getDomainPrice(string memory domainName) public view returns (uint256) {
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+        uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
+
         return domainLevelPrices.get(level);
     }
 
@@ -25,8 +26,10 @@ contract DomainRegistry {
         domainLevelPrices.set(level, price);
     }
 
-    modifier checkSufficientEtn() {
-        require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
+    modifier checkSufficientEtn(string memory domainName) {
+        uint256 price = getDomainPrice(domainName);
+
+        require(msg.value >= price, "Insufficient ETH sent");
         _;
     }
 
@@ -69,26 +72,31 @@ contract DomainRegistry {
         return domains[rootDomain];
     }
 
-    function getPrice(string memory domainName) public view returns (address) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
-
-        return domains[rootDomain];
-    }
-
-    function registerDomain(string memory domainName) external payable checkDomainLength(domainName) checkDomainParent(domainName) checkDomainAvailability(domainName) checkSufficientEtn()
+    function registerDomain(string memory domainName) external payable
+        checkDomainLength(domainName)
+        checkDomainParent(domainName)
+        checkDomainAvailability(domainName)
+        checkSufficientEtn(domainName)
     {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
+        uint256 price = getDomainPrice(domainName);
+
+        payable(owner).transfer(price / 100);
+        uint256 excess = msg.value - price;
+        if (excess > 0) {
+            payable(msg.sender).transfer(excess);
+        }
 
         domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
-    function unregisterDomain(string memory domainName) external payable checkDomainLength(domainName) checkDomainReleasing(domainName) {
+    function unregisterDomain(string memory domainName) external
+        checkDomainLength(domainName)
+        checkDomainReleasing(domainName)
+    {
         delete domains[domainName];
 
-        payable(msg.sender).transfer(DEPOSIT_PRICE);
         emit DomainReleased(msg.sender, domainName);
     }
 }
