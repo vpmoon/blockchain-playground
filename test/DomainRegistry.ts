@@ -94,7 +94,7 @@ describe("DomainRegistry contract", function () {
                 const { domainsContract, addr1 } = contractState;
 
                 await expect(domainsContract.connect(addr1).setDomainLevelPrice(6, ethers.parseEther("2")))
-                    .to.be.revertedWith("Forbidden: Only owner allowed");
+                    .to.be.revertedWithCustomError(domainsContract, 'OwnableUnauthorizedAccount');
             });
         });
 

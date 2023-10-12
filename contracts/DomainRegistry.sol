@@ -2,21 +2,20 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./DomainParserLibrary.sol";
 
-contract DomainRegistry {
+contract DomainRegistry is Ownable {
     using EnumerableMap for EnumerableMap.UintToUintMap;
 
     EnumerableMap.UintToUintMap private domainLevelPrices;
 
-    address payable public owner;
     mapping(string => address) domains;
 
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    constructor() {
-        owner = payable(msg.sender);
+    constructor() Ownable(msg.sender) {
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
@@ -26,7 +25,7 @@ contract DomainRegistry {
         return domainLevelPrices.get(level);
     }
 
-    function setDomainLevelPrice(uint256 level, uint256 price) public isOnlyOwner() {
+    function setDomainLevelPrice(uint256 level, uint256 price) public onlyOwner {
         domainLevelPrices.set(level, price);
     }
 
@@ -34,11 +33,6 @@ contract DomainRegistry {
         uint256 price = getDomainPrice(domainName);
 
         require(msg.value >= price, "Insufficient ETH sent");
-        _;
-    }
-
-    modifier isOnlyOwner() {
-       require(msg.sender == owner, "Forbidden: Only owner allowed");
         _;
     }
 
@@ -86,7 +80,7 @@ contract DomainRegistry {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         uint256 price = getDomainPrice(domainName);
 
-        payable(owner).transfer(price);
+        payable(owner()).transfer(price);
         uint256 excess = msg.value - price;
         if (excess > 0) {
             payable(msg.sender).transfer(excess);
