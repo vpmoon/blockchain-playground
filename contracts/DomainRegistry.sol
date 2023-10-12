@@ -17,11 +17,6 @@ contract DomainRegistry {
 
     constructor() {
         owner = payable(msg.sender);
-        setDomainLevelPrice(1, 175);
-        setDomainLevelPrice(2, 150);
-        setDomainLevelPrice(3, 125);
-        setDomainLevelPrice(4, 100);
-        setDomainLevelPrice(5, 50);
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
@@ -31,7 +26,7 @@ contract DomainRegistry {
         return domainLevelPrices.get(level);
     }
 
-    function setDomainLevelPrice(uint256 level, uint256 price) public {
+    function setDomainLevelPrice(uint256 level, uint256 price) public isOnlyOwner() {
         domainLevelPrices.set(level, price);
     }
 
@@ -39,6 +34,11 @@ contract DomainRegistry {
         uint256 price = getDomainPrice(domainName);
 
         require(msg.value >= price, "Insufficient ETH sent");
+        _;
+    }
+
+    modifier isOnlyOwner() {
+       require(msg.sender == owner, "Forbidden: Only owner allowed");
         _;
     }
 

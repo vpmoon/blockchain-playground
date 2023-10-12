@@ -10,6 +10,11 @@ import { AddressZero } from "@ethersproject/constants";
 describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
     const ether = ethers.parseEther("1");
+    const priceLevel1Domain = ethers.parseEther("0.75");
+    const priceLevel2Domain = ethers.parseEther("0.5");
+    const priceLevel3Domain = ethers.parseEther("0.25");
+    const priceLevel4Domain = ethers.parseEther("0.15");
+    const priceLevel5Domain = ethers.parseEther("0.1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
         const stringParserLibrary = await ethers.deployContract("contracts/StringParserLibrary.sol:StringParserLibrary");
@@ -28,6 +33,12 @@ describe("DomainRegistry contract", function () {
         });
 
         await domainsContract.waitForDeployment();
+
+        await domainsContract.setDomainLevelPrice(1, priceLevel1Domain);
+        await domainsContract.setDomainLevelPrice(2, priceLevel2Domain);
+        await domainsContract.setDomainLevelPrice(3, priceLevel3Domain);
+        await domainsContract.setDomainLevelPrice(4, priceLevel4Domain);
+        await domainsContract.setDomainLevelPrice(5, priceLevel5Domain);
 
         return { domainsContract, owner, addr1 };
     }
@@ -59,7 +70,7 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe('Domain registration', function () {
+        describe('Price management', function () {
             it("Should set and get price", async function () {
                 const { domainsContract } = contractState;
 
@@ -79,6 +90,15 @@ describe("DomainRegistry contract", function () {
                 expect(level4).to.equal(ethers.parseEther("2"));
             });
 
+            it("throws if set price not by owner", async function () {
+                const { domainsContract, addr1 } = contractState;
+
+                await expect(domainsContract.connect(addr1).setDomainLevelPrice(6, ethers.parseEther("2")))
+                    .to.be.revertedWith("Forbidden: Only owner allowed");
+            });
+        });
+
+        describe('Domain registration', function () {
             it("Should register domain and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 
@@ -145,10 +165,10 @@ describe("DomainRegistry contract", function () {
                 });
             });
 
-            it("Should take deposit as 1 ether when assign domain", async function () {
+            it("Should take domain price in ether when assign domain", async function () {
                 const { domainsContract, addr1 } = contractState;
 
-                const tx = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
+                const tx = await domainsContract.connect(addr1).registerDomain('demo.test.com', { value: ether });
 
                 await expect(tx).to.changeEtherBalances([addr1, domainsContract], [-ether, ether]);
             });
