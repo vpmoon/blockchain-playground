@@ -15,6 +15,15 @@ contract DomainRegistry {
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
+    constructor() {
+        owner = payable(msg.sender);
+        setDomainLevelPrice(1, 175);
+        setDomainLevelPrice(2, 150);
+        setDomainLevelPrice(3, 125);
+        setDomainLevelPrice(4, 100);
+        setDomainLevelPrice(5, 50);
+    }
+
     function getDomainPrice(string memory domainName) public view returns (uint256) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
@@ -62,10 +71,6 @@ contract DomainRegistry {
         _;
     }
 
-    constructor() {
-        owner = payable(msg.sender);
-    }
-
     function getDomain(string memory domainName) public view returns (address) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
@@ -81,7 +86,7 @@ contract DomainRegistry {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         uint256 price = getDomainPrice(domainName);
 
-        payable(owner).transfer(price / 100);
+        payable(owner).transfer(price);
         uint256 excess = msg.value - price;
         if (excess > 0) {
             payable(msg.sender).transfer(excess);

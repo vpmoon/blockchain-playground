@@ -63,20 +63,20 @@ describe("DomainRegistry contract", function () {
             it("Should set and get price", async function () {
                 const { domainsContract } = contractState;
 
-                await domainsContract.setDomainLevelPrice(1, 175);
-                await domainsContract.setDomainLevelPrice(2, 150);
-                await domainsContract.setDomainLevelPrice(3, 125);
-                await domainsContract.setDomainLevelPrice(4, 100);
+                await domainsContract.setDomainLevelPrice(1, ethers.parseEther("2.75"));
+                await domainsContract.setDomainLevelPrice(2, ethers.parseEther("2.5"));
+                await domainsContract.setDomainLevelPrice(3, ethers.parseEther("2.25"));
+                await domainsContract.setDomainLevelPrice(4, ethers.parseEther("2"));
 
-                const level1 = await domainsContract.getDomainLevelPrice(1);
-                const level2 = await domainsContract.getDomainLevelPrice(2);
-                const level3 = await domainsContract.getDomainLevelPrice(3);
-                const level4 = await domainsContract.getDomainLevelPrice(4);
+                const level1 = await domainsContract.getDomainPrice('ua');
+                const level2 = await domainsContract.getDomainPrice('shop.ua');
+                const level3 = await domainsContract.getDomainPrice('demo.shop.ua');
+                const level4 = await domainsContract.getDomainPrice('stg0.demo.shop.ua');
 
-                expect(level1).to.equal(175);
-                expect(level2).to.equal(150);
-                expect(level3).to.equal(125);
-                expect(level4).to.equal(100);
+                expect(level1).to.equal(ethers.parseEther("2.75"));
+                expect(level2).to.equal(ethers.parseEther("2.5"));
+                expect(level3).to.equal(ethers.parseEther("2.25"));
+                expect(level4).to.equal(ethers.parseEther("2"));
             });
 
             it("Should register domain and emit event", async function () {
