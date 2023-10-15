@@ -35,10 +35,18 @@ describe("DomainRegistry contract", function () {
                 DomainParserLibrary: domainParserLibrary,
             }
         });
-        const domainsContract = await upgrades.deployProxy(domainRegistry, {
+        const domainsProxy = await upgrades.deployProxy(domainRegistry, {
             initializer: "initialize",
             unsafeAllowLinkedLibraries: true,
         });
+        const address = await domainsProxy.getAddress();
+
+        const domainRegistryV2 = await ethers.getContractFactory("DomainRegistryV2", {
+            libraries: {
+                DomainParserLibrary: domainParserLibrary,
+            }
+        });
+        const domainsContract = await upgrades.upgradeProxy(address, domainRegistryV2);
 
         await domainsContract.setDomainLevelPrice(1, priceLevel1Domain);
         await domainsContract.setDomainLevelPrice(2, priceLevel2Domain);
