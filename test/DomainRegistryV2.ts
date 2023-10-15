@@ -46,7 +46,9 @@ describe("DomainRegistry contract", function () {
                 DomainParserLibrary: domainParserLibrary,
             }
         });
-        const domainsContract = await upgrades.upgradeProxy(address, domainRegistryV2);
+        const domainsContract = await upgrades.upgradeProxy(address, domainRegistryV2, {
+            unsafeAllowLinkedLibraries: true,
+        });
 
         await domainsContract.setDomainLevelPrice(1, priceLevel1Domain);
         await domainsContract.setDomainLevelPrice(2, priceLevel2Domain);
