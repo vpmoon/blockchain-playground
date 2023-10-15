@@ -1,37 +1,29 @@
-// deployProxyWithLibraries.js
-const { ethers, upgrades } = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-    // Deploy Library2
-    const Library2 = await ethers.getContractFactory("contracts/StringParserLibrary.sol:StringParserLibrary");
-    const library2 = await Library2.deploy();
-    console.log("Library2 deployed to:", library2.address);
+    const stringParserLibrary = await ethers.getContractFactory("contracts/StringParserLibrary.sol:StringParserLibrary");
+    const stringParserLibraryDeployed = await stringParserLibrary.deploy();
 
-    // Deploy Library1 with the address of Library2
-    const Library1 = await ethers.getContractFactory("contracts/DomainParserLibrary.sol:DomainParserLibrary",  {
+    const domainParserLibrary = await ethers.getContractFactory("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
         libraries: {
-            StringParserLibrary: library2
-        }
+            StringParserLibrary: stringParserLibraryDeployed,
+        },
     });
-    const library1 = await Library1.deploy();
-    console.log("Library1 deployed to:", library1.address);
+    const domainParserLibraryContract = await domainParserLibrary.deploy();
 
-    // Deploy MainContract with the address of Library1
-    const MainContract = await ethers.getContractFactory("DomainRegistry", {
+    const domainRegistry = await ethers.getContractFactory("DomainRegistry", {
         libraries: {
-            DomainParserLibrary: library1
-        }
+            DomainParserLibrary: domainParserLibraryContract,
+        },
     });
-    console.log(upgrades)
-    const mainContract = await upgrades.deployProxy(MainContract, [100], {
+    const proxyContract = await upgrades.deployProxy(domainRegistry, {
         initializer: "initialize",
+        unsafeAllowLinkedLibraries: true,
     });
-    console.log("MainContract deployed to:", mainContract.address);
+    console.log("DomainRegistryV1 deployed to:", await proxyContract.getAddress());
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
 });
