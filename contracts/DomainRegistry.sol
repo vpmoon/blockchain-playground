@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "./DomainParserLibrary.sol";
@@ -15,7 +16,8 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    function initialize() public initializer {
+    function initialize() initializer public {
+        __Ownable_init(msg.sender);
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {

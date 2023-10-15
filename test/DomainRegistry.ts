@@ -1,4 +1,5 @@
 import { DomainRegistryFixture } from "./DomainRegistry.types";
+require("@openzeppelin/hardhat-upgrades");
 
 const { expect } = require("chai");
 const {
@@ -17,28 +18,33 @@ describe("DomainRegistry contract", function () {
     const priceLevel5Domain = ethers.parseEther("0.1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
-        const stringParserLibrary = await ethers.deployContract("contracts/StringParserLibrary.sol:StringParserLibrary");
+        const [owner, addr1] = await ethers.getSigners();
 
-        const domainParserLibrary = await ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
+        const stringParserLibraryFactory = await ethers.getContractFactory("contracts/StringParserLibrary.sol:StringParserLibrary");
+        const stringParserLibrary = await stringParserLibraryFactory.deploy();
+
+        const domainParserLibraryFactory = await ethers.getContractFactory("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
             libraries: {
                 StringParserLibrary: stringParserLibrary
             }
         });
+        const domainParserLibrary = await domainParserLibraryFactory.deploy();
 
-        const [owner, addr1] = await ethers.getSigners();
-        const domainsContract = await ethers.deployContract("DomainRegistry", {
+        const domainRegistry = await ethers.getContractFactory("DomainRegistry", {
             libraries: {
-                DomainParserLibrary: domainParserLibrary
+                DomainParserLibrary: domainParserLibrary,
             }
         });
-
-        await domainsContract.waitForDeployment();
+        const domainsContract = await upgrades.deployProxy(domainRegistry, {
+            initializer: "initialize",
+            unsafeAllowLinkedLibraries: true,
+        });
 
         await domainsContract.setDomainLevelPrice(1, priceLevel1Domain);
         await domainsContract.setDomainLevelPrice(2, priceLevel2Domain);
         await domainsContract.setDomainLevelPrice(3, priceLevel3Domain);
         await domainsContract.setDomainLevelPrice(4, priceLevel4Domain);
-        await domainsContract.setDomainLevelPrice(5, priceLevel5Domain);
+        await domainsContract.setDomainLevelPrice(5, priceLevel5Domain)
 
         return { domainsContract, owner, addr1 };
     }
@@ -56,7 +62,7 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe('Tracking events', function () {
+        describe('Tracking evstringParserLibraryents', function () {
             it("Should catch events when register and release", async function () {
                 const { domainsContract, owner } = contractState;
                 await expect(domainsContract.registerDomain('com', { value:  ether }))
