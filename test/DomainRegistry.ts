@@ -62,7 +62,7 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe('Tracking evstringParserLibraryents', function () {
+        describe('Tracking events', function () {
             it("Should catch events when register and release", async function () {
                 const { domainsContract, owner } = contractState;
                 await expect(domainsContract.registerDomain('com', { value:  ether }))
