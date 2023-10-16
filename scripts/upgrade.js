@@ -1,15 +1,40 @@
-import assert from "assert";
+const assert = require("assert");
 
 (async () => {
-    const ContractV2 = await ethers.getContractFactory("DomainRegistry");
-    const address = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
-    const upgradedToContractV2 = await upgrades.upgradeProxy(address, ContractV2);
-    console.log("SimpleStorageV2 upgraded\n");
+    const stringParserLibraryFactory = await ethers.getContractFactory("contracts/StringParserLibrary.sol:StringParserLibrary");
+    const stringParserLibrary = await stringParserLibraryFactory.deploy();
 
+    const domainParserLibraryFactory = await ethers.getContractFactory("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
+        libraries: {
+            StringParserLibrary: stringParserLibrary
+        }
+    });
+    const domainParserLibrary = await domainParserLibraryFactory.deploy();
+
+    const domainRegistry = await ethers.getContractFactory("DomainRegistry", {
+        libraries: {
+            DomainParserLibrary: domainParserLibrary,
+        }
+    });
+    const domainsProxy = await upgrades.deployProxy(domainRegistry, {
+        initializer: "initialize",
+        unsafeAllowLinkedLibraries: true,
+    });
+    const address = await domainsProxy.getAddress();
+
+    const domainRegistryV2 = await ethers.getContractFactory("DomainRegistryV2", {
+        libraries: {
+            DomainParserLibrary: domainParserLibrary,
+        }
+    });
+    const domainsContractV2 = await upgrades.upgradeProxy(address, domainRegistryV2, {
+        unsafeAllowLinkedLibraries: true,
+    });
+
+    console.log("DomainsContractV2 upgraded");
     console.log("address:", address);
-    console.log("upgradedToContractV2 address:", await upgradedToContractV2.getAddress());
+    console.log("upgradedToContractV2 address:", await domainsContractV2.getAddress());
+    console.log("Addresses are the same!")
 
-    console.log("\nAddresses are the same!")
-
-    assert(await upgradedToContractV2.getAddress() === address);
+    assert(await domainsContractV2.getAddress() === address);
 })();
