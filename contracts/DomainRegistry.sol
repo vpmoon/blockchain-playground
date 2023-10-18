@@ -21,8 +21,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
+        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
 
         return domainLevelPrices.get(level);
     }
@@ -48,8 +47,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     modifier checkDomainAvailability(string memory domainName) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        require(domains[rootDomain] == address(0), "Domain is already reserved");
+        require(domains[domainName] == address(0), "Domain is already reserved");
         _;
     }
 
@@ -61,7 +59,6 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     modifier checkDomainReleasing(string memory domainName) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         require(domains[domainName] != address(0), "Domain is not registered yet");
         require(domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
         _;
@@ -73,14 +70,20 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         return domains[rootDomain];
     }
 
-    function registerDomain(string memory domainName) external payable
-        checkDomainLength(domainName)
+    function validateDomainRegistration(string memory domainName) internal
         checkDomainParent(domainName)
         checkDomainAvailability(domainName)
         checkSufficientEtn(domainName)
     {
+    }
+
+    function registerDomain(string memory domainName) external payable
+        checkDomainLength(domainName)
+    {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        uint256 price = getDomainPrice(domainName);
+        validateDomainRegistration(rootDomain);
+
+        uint256 price = getDomainPrice(rootDomain);
 
         payable(owner()).transfer(price);
         uint256 excess = msg.value - price;
