@@ -13,9 +13,6 @@ describe("DomainRegistry contract", function () {
     const ether = ethers.parseEther("1");
     const priceLevel1Domain = ethers.parseEther("0.75");
     const priceLevel2Domain = ethers.parseEther("0.5");
-    const priceLevel3Domain = ethers.parseEther("0.25");
-    const priceLevel4Domain = ethers.parseEther("0.15");
-    const priceLevel5Domain = ethers.parseEther("0.1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
         const [owner, addr1, addr2] = await ethers.getSigners();
@@ -49,12 +46,6 @@ describe("DomainRegistry contract", function () {
         const domainsContract = await upgrades.upgradeProxy(address, domainRegistryV2, {
             unsafeAllowLinkedLibraries: true,
         });
-
-        await domainsContract.setDomainLevelPrice(1, priceLevel1Domain);
-        await domainsContract.setDomainLevelPrice(2, priceLevel2Domain);
-        await domainsContract.setDomainLevelPrice(3, priceLevel3Domain);
-        await domainsContract.setDomainLevelPrice(4, priceLevel4Domain);
-        await domainsContract.setDomainLevelPrice(5, priceLevel5Domain)
 
         return { domainsContract, owner, addr1, addr2 };
     }

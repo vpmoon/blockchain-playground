@@ -17,6 +17,12 @@ contract DomainRegistryV2 is Initializable, OwnableUpgradeable {
 
     function reinitialize() public reinitializer(2) {
         __Ownable_init(msg.sender);
+
+        setDomainLevelPrice(1, 0.75 ether);
+        setDomainLevelPrice(2, 0.5 ether);
+        setDomainLevelPrice(3, 0.25 ether);
+        setDomainLevelPrice(4, 0.15 ether);
+        setDomainLevelPrice(5, 0.1 ether);
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
