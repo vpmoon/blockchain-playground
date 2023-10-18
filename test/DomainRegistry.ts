@@ -10,6 +10,11 @@ import { AddressZero } from "@ethersproject/constants";
 describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
     const ether = ethers.parseEther("1");
+    const priceLevel1Domain = ethers.parseEther("0.75");
+    const priceLevel2Domain = ethers.parseEther("0.5");
+    const priceLevel3Domain = ethers.parseEther("0.25");
+    const priceLevel4Domain = ethers.parseEther("0.15");
+    const priceLevel5Domain = ethers.parseEther("0.1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
         const stringParserLibrary = await ethers.deployContract("contracts/StringParserLibrary.sol:StringParserLibrary");
@@ -28,6 +33,12 @@ describe("DomainRegistry contract", function () {
         });
 
         await domainsContract.waitForDeployment();
+
+        await domainsContract.setDomainLevelPrice(1, priceLevel1Domain);
+        await domainsContract.setDomainLevelPrice(2, priceLevel2Domain);
+        await domainsContract.setDomainLevelPrice(3, priceLevel3Domain);
+        await domainsContract.setDomainLevelPrice(4, priceLevel4Domain);
+        await domainsContract.setDomainLevelPrice(5, priceLevel5Domain);
 
         return { domainsContract, owner, addr1 };
     }
@@ -56,6 +67,34 @@ describe("DomainRegistry contract", function () {
                     .to.emit(domainsContract, 'DomainReleased')
                     .withArgs(owner.address, 'com');
 
+            });
+        });
+
+        describe('Price management', function () {
+            it("Should set and get price", async function () {
+                const { domainsContract } = contractState;
+
+                await domainsContract.setDomainLevelPrice(1, ethers.parseEther("2.75"));
+                await domainsContract.setDomainLevelPrice(2, ethers.parseEther("2.5"));
+                await domainsContract.setDomainLevelPrice(3, ethers.parseEther("2.25"));
+                await domainsContract.setDomainLevelPrice(4, ethers.parseEther("2"));
+
+                const level1 = await domainsContract.getDomainPrice('ua');
+                const level2 = await domainsContract.getDomainPrice('shop.ua');
+                const level3 = await domainsContract.getDomainPrice('demo.shop.ua');
+                const level4 = await domainsContract.getDomainPrice('stg0.demo.shop.ua');
+
+                expect(level1).to.equal(ethers.parseEther("2.75"));
+                expect(level2).to.equal(ethers.parseEther("2.5"));
+                expect(level3).to.equal(ethers.parseEther("2.25"));
+                expect(level4).to.equal(ethers.parseEther("2"));
+            });
+
+            it("throws if set price not by owner", async function () {
+                const { domainsContract, addr1 } = contractState;
+
+                await expect(domainsContract.connect(addr1).setDomainLevelPrice(6, ethers.parseEther("2")))
+                    .to.be.revertedWithCustomError(domainsContract, 'OwnableUnauthorizedAccount');
             });
         });
 
@@ -126,29 +165,28 @@ describe("DomainRegistry contract", function () {
                 });
             });
 
-            it("Should take deposit as 1 ether when assign domain", async function () {
-                const { domainsContract, addr1 } = contractState;
+            it("Should take domain price in ether when assign domain", async function () {
+                const { domainsContract, addr1, owner } = contractState;
 
                 const tx = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
 
-                await expect(tx).to.changeEtherBalances([addr1, domainsContract], [-ether, ether]);
+                await expect(tx).to.changeEtherBalances(
+                    [addr1, owner],
+                    [-priceLevel1Domain, priceLevel1Domain]
+                );
             });
         });
 
         describe('Domain releasing', function () {
-            it("Should unregister domain, return deposit and emit event", async function () {
-                const { domainsContract, addr1 } = contractState;
+            it("Should unregister domain without balance change", async function () {
+                const { domainsContract, addr1, owner } = contractState;
 
-                const tx1 = await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
-                await expect(tx1).to.changeEtherBalances([addr1, domainsContract], [-ether, ether]);
-
+                await domainsContract.connect(addr1).registerDomain('com', { value:  ether });
                 const tx2 = await domainsContract.connect(addr1).unregisterDomain('com');
-                await expect(tx2).to.changeEtherBalances([addr1, domainsContract], [ether, -ether]);
+                await expect(tx2).to.changeEtherBalances([addr1, owner], [0, 0]);
 
                 const address = await domainsContract.getDomain('com');
                 expect(address).to.equal(AddressZero);
-
-
             });
 
             it("Should fail if unregistering by not domain owner", async function () {
@@ -158,16 +196,16 @@ describe("DomainRegistry contract", function () {
 
                 await expect(domainsContract
                     .connect(addr1)
-                    .unregisterDomain('com', { value: ether }))
+                    .unregisterDomain('com'))
                     .to.be.revertedWith("Domain should be unregistered by the domain owner");
             });
 
-            it("Should fail if unregistering free domain", async function () {
+            it("Should fail if unregistering already free domain", async function () {
                 const { domainsContract, addr1 } = contractState;
 
                 await expect(domainsContract
                     .connect(addr1)
-                    .unregisterDomain('ua', { value: ether }))
+                    .unregisterDomain('ua'))
                     .to.be.revertedWith("Domain is not registered yet");
             });
         });

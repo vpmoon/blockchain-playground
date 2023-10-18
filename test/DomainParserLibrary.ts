@@ -60,17 +60,17 @@ describe("DomainParserLibrary contract", function () {
         });
     });
 
-    describe('isTopLevelDomain ', function () {
-        it("returns true if url is top domain", async function () {
-            const result = await domainParserLibrary.isTopLevelDomain('ua');
+    describe('getDomainLevel ', function () {
+        it("returns level if url is top domain", async function () {
+            const result = await domainParserLibrary.getDomainLevel('ua');
 
-            expect(result).to.be.true;
+            expect(result).to.equal(1);
         });
 
-        it("returns true if url is not a top domain", async function () {
-            const result = await domainParserLibrary.isTopLevelDomain("https://stg0.new.net.ua");
+        it("returns level if url is not a top domain", async function () {
+            const result = await domainParserLibrary.getDomainLevel("https://stg0.new.net.ua");
 
-            expect(result).to.be.false;
+            expect(result).to.equal(4);
         });
     });
 });

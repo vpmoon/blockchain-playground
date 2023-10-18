@@ -1,25 +1,44 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./DomainParserLibrary.sol";
 
-uint256 constant DEPOSIT_PRICE = 1 ether;
+contract DomainRegistry is Ownable {
+    using EnumerableMap for EnumerableMap.UintToUintMap;
 
-contract DomainRegistry {
-    address payable public owner;
+    EnumerableMap.UintToUintMap private domainLevelPrices;
+
     mapping(string => address) domains;
 
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    modifier checkSufficientEtn() {
-        require(msg.value >= DEPOSIT_PRICE, "Insufficient ETH sent");
+    constructor() Ownable(msg.sender) {
+    }
+
+    function getDomainPrice(string memory domainName) public view returns (uint256) {
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+        uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
+
+        return domainLevelPrices.get(level);
+    }
+
+    function setDomainLevelPrice(uint256 level, uint256 price) public onlyOwner {
+        domainLevelPrices.set(level, price);
+    }
+
+    modifier checkSufficientEtn(string memory domainName) {
+        uint256 price = getDomainPrice(domainName);
+
+        require(msg.value >= price, "Insufficient ETH sent");
         _;
     }
 
     modifier checkDomainParent(string memory domainName) {
-        bool isTopLevel = DomainParserLibrary.isTopLevelDomain(domainName);
-        if (!isTopLevel) {
+        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
+        if (level != uint8(1)) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
             require(domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
@@ -46,28 +65,37 @@ contract DomainRegistry {
         _;
     }
 
-    constructor() {
-        owner = payable(msg.sender);
-    }
-
     function getDomain(string memory domainName) public view returns (address) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
         return domains[rootDomain];
     }
 
-    function registerDomain(string memory domainName) external payable checkDomainLength(domainName) checkDomainParent(domainName) checkDomainAvailability(domainName) checkSufficientEtn()
+    function registerDomain(string memory domainName) external payable
+        checkDomainLength(domainName)
+        checkDomainParent(domainName)
+        checkDomainAvailability(domainName)
+        checkSufficientEtn(domainName)
     {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+        uint256 price = getDomainPrice(domainName);
+
+        payable(owner()).transfer(price);
+        uint256 excess = msg.value - price;
+        if (excess > 0) {
+            payable(msg.sender).transfer(excess);
+        }
 
         domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
-    function unregisterDomain(string memory domainName) external payable checkDomainLength(domainName) checkDomainReleasing(domainName) {
+    function unregisterDomain(string memory domainName) external
+        checkDomainLength(domainName)
+        checkDomainReleasing(domainName)
+    {
         delete domains[domainName];
 
-        payable(msg.sender).transfer(DEPOSIT_PRICE);
         emit DomainReleased(msg.sender, domainName);
     }
 }
