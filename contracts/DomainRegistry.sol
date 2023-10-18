@@ -3,15 +3,11 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "./DomainParserLibrary.sol";
 
 contract DomainRegistry is Initializable, OwnableUpgradeable {
     mapping(address => uint) public shares;
-    using EnumerableMap for EnumerableMap.UintToUintMap;
-
-    EnumerableMap.UintToUintMap private domainLevelPrices;
-
+    mapping(uint => uint) public domainLevelPrices;
     mapping(string => address) domains;
 
     event DomainRegistered(address indexed controller, string domainName);
@@ -24,11 +20,11 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     function getDomainPrice(string memory domainName) public view returns (uint256) {
         uint8 level = DomainParserLibrary.getDomainLevel(domainName);
 
-        return domainLevelPrices.get(level);
+        return domainLevelPrices[level];
     }
 
     function setDomainLevelPrice(uint256 level, uint256 price) public onlyOwner {
-        domainLevelPrices.set(level, price);
+        domainLevelPrices[level] = price;
     }
 
     modifier checkSufficientEtn(string memory domainName) {
