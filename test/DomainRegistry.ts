@@ -171,14 +171,19 @@ describe("DomainRegistry contract", function () {
                 });
             });
 
-            it("Should take domain price in ether when assign domain", async function () {
+            it("Should block amount and transfer to owner after withdraw", async function () {
                 const { domainsContract, addr1, owner } = contractState;
 
                 const tx = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
-
                 await expect(tx).to.changeEtherBalances(
-                    [addr1, owner],
-                    [-priceLevel1Domain, priceLevel1Domain]
+                    [addr1],
+                    [-priceLevel1Domain]
+                );
+
+                const tx2 = await domainsContract.connect(addr1).withdraw();
+                await expect(tx2).to.changeEtherBalances(
+                    [owner],
+                    [priceLevel1Domain]
                 );
             });
         });

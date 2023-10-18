@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "./DomainParserLibrary.sol";
 
 contract DomainRegistryV2 is Initializable, OwnableUpgradeable {
+    mapping(address => uint) public shares;
     using EnumerableMap for EnumerableMap.UintToUintMap;
 
     EnumerableMap.UintToUintMap private domainLevelPrices;
@@ -23,8 +24,7 @@ contract DomainRegistryV2 is Initializable, OwnableUpgradeable {
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
+        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
 
         return domainLevelPrices.get(level);
     }
@@ -50,8 +50,7 @@ contract DomainRegistryV2 is Initializable, OwnableUpgradeable {
     }
 
     modifier checkDomainAvailability(string memory domainName) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        require(domains[rootDomain] == address(0), "Domain is already reserved");
+        require(domains[domainName] == address(0), "Domain is already reserved");
         _;
     }
 
@@ -63,7 +62,6 @@ contract DomainRegistryV2 is Initializable, OwnableUpgradeable {
     }
 
     modifier checkDomainReleasing(string memory domainName) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         require(domains[domainName] != address(0), "Domain is not registered yet");
         require(domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
         _;
@@ -75,20 +73,31 @@ contract DomainRegistryV2 is Initializable, OwnableUpgradeable {
         return domains[rootDomain];
     }
 
-    function registerDomain(string memory domainName) external payable
-        checkDomainLength(domainName)
+    function validateDomainRegistration(string memory domainName) internal
         checkDomainParent(domainName)
         checkDomainAvailability(domainName)
         checkSufficientEtn(domainName)
     {
+    }
+
+    function withdraw() external {
+        uint share = shares[msg.sender];
+        shares[msg.sender] = 0;
+        payable(owner()).transfer(share);
+    }
+
+    function registerDomain(string memory domainName) external payable
+        checkDomainLength(domainName)
+    {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+        validateDomainRegistration(rootDomain);
         string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
 
-        uint256 price = getDomainPrice(domainName);
+        uint256 price = getDomainPrice(rootDomain);
         uint256 parentReward = price * REWARD_PERCENT_OWNER / 100;
         uint256 ownerReward = price - parentReward;
 
-        payable(owner()).transfer(ownerReward);
+        shares[msg.sender] += ownerReward;
         payable(domains[parentDomain]).transfer(parentReward);
 
         uint256 excess = msg.value - price;

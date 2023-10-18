@@ -186,8 +186,14 @@ describe("DomainRegistry contract", function () {
 
                 const tx = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
                 await expect(tx).to.changeEtherBalances(
-                    [addr1, owner],
-                    [-priceLevel1Domain, priceLevel1Domain - priceLevel1Domain * BigInt(10) / BigInt(100)]
+                    [addr1],
+                    [-priceLevel1Domain]
+                );
+
+                const tx2 = await domainsContract.connect(addr1).withdraw();
+                await expect(tx2).to.changeEtherBalances(
+                    [owner],
+                    [priceLevel1Domain - priceLevel1Domain * BigInt(10) / BigInt(100)]
                 );
             });
 
@@ -198,12 +204,17 @@ describe("DomainRegistry contract", function () {
                 const tx = await domainsContract.connect(addr2).registerDomain('test.com', { value: ether });
 
                 await expect(tx).to.changeEtherBalances(
-                    [addr2, addr1, owner],
+                    [addr2, addr1],
                     [
                         -priceLevel2Domain, 
                         priceLevel2Domain * BigInt(10) / BigInt(100),
-                        priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)
                     ]
+                );
+
+                const tx2 = await domainsContract.connect(addr2).withdraw();
+                await expect(tx2).to.changeEtherBalances(
+                    [owner],
+                    [priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)]
                 );
             });
         });

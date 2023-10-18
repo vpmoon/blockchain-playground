@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "./DomainParserLibrary.sol";
 
 contract DomainRegistry is Initializable, OwnableUpgradeable {
+    mapping(address => uint) public shares;
     using EnumerableMap for EnumerableMap.UintToUintMap;
 
     EnumerableMap.UintToUintMap private domainLevelPrices;
@@ -77,6 +78,12 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     {
     }
 
+    function withdraw() external {
+        uint share = shares[msg.sender];
+        shares[msg.sender] = 0;
+        payable(owner()).transfer(share);
+    }
+
     function registerDomain(string memory domainName) external payable
         checkDomainLength(domainName)
     {
@@ -85,7 +92,8 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
 
         uint256 price = getDomainPrice(rootDomain);
 
-        payable(owner()).transfer(price);
+        shares[msg.sender] += price;
+
         uint256 excess = msg.value - price;
         if (excess > 0) {
             payable(msg.sender).transfer(excess);
