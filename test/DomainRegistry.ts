@@ -12,8 +12,20 @@ describe("DomainRegistry contract", function () {
     const ether = ethers.parseEther("1");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
+        const stringParserLibrary = await ethers.deployContract("contracts/StringParserLibrary.sol:StringParserLibrary");
+
+        const domainParserLibrary = await ethers.deployContract("contracts/DomainParserLibrary.sol:DomainParserLibrary", {
+            libraries: {
+                StringParserLibrary: stringParserLibrary
+            }
+        });
+
         const [owner, addr1] = await ethers.getSigners();
-        const domainsContract = await ethers.deployContract("DomainRegistry");
+        const domainsContract = await ethers.deployContract("DomainRegistry", {
+            libraries: {
+                DomainParserLibrary: domainParserLibrary
+            }
+        });
 
         await domainsContract.waitForDeployment();
 
@@ -58,6 +70,22 @@ describe("DomainRegistry contract", function () {
                 expect(address).to.equal(addr1.address);
             });
 
+            it(`Should fail if domain is already reserved`, async function () {
+                const { domainsContract } = contractState;
+
+                domainsContract.registerDomain('com', { value: ether })
+
+                await expect(domainsContract.registerDomain('com', { value: ether }))
+                    .to.be.revertedWith("Domain is already reserved");
+            });
+
+            it(`Should fail if domain length is not valid`, async function () {
+                const { domainsContract } = contractState;
+
+                await expect(domainsContract.registerDomain('c', { value: ether }))
+                    .to.be.revertedWith("Domain length should be between 2 and 253");
+            });
+
             it("Should fail if not enough etn for registering domain", async function () {
                 const { domainsContract, addr1 } = contractState;
 
@@ -65,6 +93,37 @@ describe("DomainRegistry contract", function () {
 
                 await expect(domainsContract.connect(addr1).registerDomain('com', { value: etherToSend }))
                     .to.be.revertedWith("Insufficient ETH sent");
+            });
+
+            ['google.com', 'http://new.business.com', 'https://stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain) => {
+                it(`Should not allow to register ${domain} if parent domain doesn't exists`, async function () {
+                    const { domainsContract } = contractState;
+
+                    domainsContract.registerDomain(domain, { value: ether })
+
+                    await expect(domainsContract.registerDomain(domain, { value: ether }))
+                        .to.be.revertedWith("Parent domain doesn't exist");
+                });
+            });
+
+            [
+                { domain: 'google.com', parents: ['com'] },
+                { domain: 'http://new.business.no', parents: ['no', 'business.no'] },
+                { domain: 'https://stg0.new.net.ua', parents: ['ua', 'net.ua', 'new.net.ua'] },
+                { domain: 'demo.stg0.new.com.pl', parents: ['pl', 'com.pl', 'new.com.pl', 'stg0.new.com.pl'] },
+            ].forEach(({ domain, parents }) => {
+                it(`Should allow to register ${domain} domain if parents exist`, async function () {
+                    const { domainsContract, owner } = contractState;
+
+                    for (const parent of parents) {
+                        await domainsContract.registerDomain(parent, { value: ether });
+                    }
+                    await domainsContract.registerDomain(domain, { value: ether });
+
+                    const address = await domainsContract.getDomain(domain);
+
+                    expect(address).to.equal(owner.address);
+                });
             });
 
             it("Should take deposit as 1 ether when assign domain", async function () {
@@ -112,6 +171,7 @@ describe("DomainRegistry contract", function () {
                     .to.be.revertedWith("Domain is not registered yet");
             });
         });
+
     });
 
 });
