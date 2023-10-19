@@ -184,7 +184,7 @@ describe("DomainRegistry contract", function () {
                 const tx2 = await domainsContract.connect(addr1).withdraw();
                 await expect(tx2).to.changeEtherBalances(
                     [owner],
-                    [priceLevel1Domain - priceLevel1Domain * BigInt(10) / BigInt(100)]
+                    [priceLevel1Domain]
                 );
             });
 
