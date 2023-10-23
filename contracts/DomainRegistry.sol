@@ -13,7 +13,9 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    function initialize() initializer public {
+    uint256 public constant REWARD_PERCENT_OWNER = 10;
+
+    function reinitialize() public reinitializer(2) {
         __Ownable_init(msg.sender);
 
         setDomainLevelPrice(1, 0.75 ether);
@@ -91,17 +93,27 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         validateDomainRegistration(rootDomain);
-
+        string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
+        address parentDomainOwner = domains[parentDomain];
         uint256 price = getDomainPrice(rootDomain);
 
-        shares[msg.sender] += price;
+        uint256 parentReward;
+        if (parentDomainOwner == address(0)) {
+            parentReward = 0;
+        } else {
+            parentReward = price * REWARD_PERCENT_OWNER / 100;
+        }
+        uint256 ownerReward = price - parentReward;
+
+        domains[rootDomain] = msg.sender;
+        shares[msg.sender] += ownerReward;
+        payable(parentDomainOwner).transfer(parentReward);
 
         uint256 excess = msg.value - price;
         if (excess > 0) {
             payable(msg.sender).transfer(excess);
         }
 
-        domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
