@@ -163,8 +163,8 @@ describe("DomainRegistry contract", function () {
             it("Should take domain price in ether when assign domain 1 level", async function () {
                 const { domainsContract, addr1, owner } = contractState;
 
-                const tx = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
-                await expect(tx).to.changeEtherBalances(
+                const tx1 = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
+                await expect(tx1).to.changeEtherBalances(
                     [addr1],
                     [-priceLevel1Domain]
                 );
@@ -181,19 +181,21 @@ describe("DomainRegistry contract", function () {
 
                 await domainsContract.connect(addr1).registerDomain('com', { value: ether });
                 const tx = await domainsContract.connect(addr2).registerDomain('test.com', { value: ether });
-
                 await expect(tx).to.changeEtherBalances(
-                    [addr2, addr1],
-                    [
-                        -priceLevel2Domain,
-                        priceLevel2Domain * BigInt(10) / BigInt(100),
-                    ]
+                    [addr2],
+                    [-priceLevel2Domain]
                 );
 
-                const tx2 = await domainsContract.connect(addr2).withdraw();
+                const tx2 = await domainsContract.connect(addr1).withdraw();
                 await expect(tx2).to.changeEtherBalances(
+                    [addr1],
+                    [priceLevel2Domain * BigInt(10) / BigInt(100)]
+                );
+
+                const tx3 = await domainsContract.connect(owner).withdraw();
+                await expect(tx3).to.changeEtherBalances(
                     [owner],
-                    [priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)]
+                    [priceLevel1Domain + priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)]
                 );
             });
         });
