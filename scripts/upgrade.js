@@ -2,7 +2,7 @@ const assert = require("assert");
 const path = require('path');
 const fs = require('fs');
 
-const address = "0x9a676e781a523b5d0c0e43731313a708cb607508";
+const address = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
 
 (async () => {
     const stringParserLibraryFactory = await ethers.getContractFactory("contracts/StringParserLibrary.sol:StringParserLibrary");
@@ -25,6 +25,9 @@ const address = "0x9a676e781a523b5d0c0e43731313a708cb607508";
         }
     });
     const domainsContractV2 = await upgrades.upgradeProxy(oldContract, domainRegistryV2, {
+        call: {
+            fn: "reinitialize"
+        },
         unsafeAllowLinkedLibraries: true,
     });
 
