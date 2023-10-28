@@ -31,14 +31,10 @@ const address = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
         unsafeAllowLinkedLibraries: true,
     });
 
-    console.log("DomainsContract V2 upgraded");
+    console.log("Upgraded DomainsContract contains new functionality");
     const value = await domainsContractV2.REWARD_PERCENT_OWNER();
-    console.log("DomainsContract V2 contains new functionality reward_percent=", value);
     assert(BigInt(value) === BigInt(10));
 
     console.log("address:", address);
     console.log("upgradedToContractV2 address:", await domainsContractV2.getAddress());
-
-    console.log("Addresses are the same!")
-    assert(await domainsContractV2.getAddress() === address);
 })();

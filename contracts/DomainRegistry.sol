@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./DomainParserLibrary.sol";
 
 contract DomainRegistry is Initializable, OwnableUpgradeable {
-    mapping(address => uint) public balances;
+    mapping(address => uint) private balances;
     mapping(uint => uint) public domainLevelPrices;
     mapping(string => address) domains;
 
