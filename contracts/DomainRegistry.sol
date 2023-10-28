@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./DomainParserLibrary.sol";
 
 contract DomainRegistry is Initializable, OwnableUpgradeable {
-    mapping(address => uint) private balances;
+    mapping(address => uint) private shares;
     mapping(uint => uint) public domainLevelPrices;
     mapping(string => address) domains;
 
@@ -83,8 +83,8 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     function withdraw() external {
-        uint share = balances[msg.sender];
-        balances[msg.sender] = 0;
+        uint share = shares[msg.sender];
+        shares[msg.sender] = 0;
         payable(msg.sender).transfer(share);
     }
 
@@ -104,11 +104,11 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         } else {
             parentReward = price * REWARD_PERCENT_OWNER / 100;
         }
-        balances[parentDomainOwner] = parentReward;
+        shares[parentDomainOwner] = parentReward;
 
         // contract owner
         uint256 ownerReward = price - parentReward;
-        balances[owner()] += ownerReward;
+        shares[owner()] += ownerReward;
 
         domains[rootDomain] = msg.sender;
 
