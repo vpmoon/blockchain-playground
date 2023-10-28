@@ -26,7 +26,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
-        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
+        uint256 level = DomainParserLibrary.getDomainLevel(domainName);
 
         return domainLevelPrices[level];
     }
@@ -43,8 +43,8 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     modifier checkDomainParent(string memory domainName) {
-        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
-        if (level != uint8(1)) {
+        uint256 level = DomainParserLibrary.getDomainLevel(domainName);
+        if (level != uint256(1)) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
             require(domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
