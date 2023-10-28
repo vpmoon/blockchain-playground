@@ -20,12 +20,9 @@ async function main() {
         initializer: "initialize",
         unsafeAllowLinkedLibraries: true,
     });
-    const [account] = await ethers.getSigners();
-
     console.log("DomainRegistryV1 deployed to:", await proxyContract.getAddress());
     console.log("stringParserLibraryDeployed deployed to:", await stringParserLibraryDeployed.getAddress());
     console.log("domainParserLibraryContract deployed to:", await domainParserLibraryContract.getAddress());
-    console.log("Signer is:", await account.getAddress());
 }
 
 main().catch((error) => {
