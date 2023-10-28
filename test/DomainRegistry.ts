@@ -12,9 +12,10 @@ describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
     const ether = ethers.parseEther("1");
     const priceLevel1Domain = ethers.parseEther("0.75");
+    const priceLevel2Domain = ethers.parseEther("0.5");
 
     async function deployTokenFixture(): Promise<DomainRegistryFixture> {
-        const [owner, addr1] = await ethers.getSigners();
+        const [owner, addr1, addr2] = await ethers.getSigners();
 
         const stringParserLibraryFactory = await ethers.getContractFactory("contracts/StringParserLibrary.sol:StringParserLibrary");
         const stringParserLibrary = await stringParserLibraryFactory.deploy();
@@ -31,19 +32,29 @@ describe("DomainRegistry contract", function () {
                 DomainParserLibrary: domainParserLibrary,
             }
         });
-        const domainsContract = await upgrades.deployProxy(domainRegistry, {
+        const domainsProxy = await upgrades.deployProxy(domainRegistry, {
             initializer: "initialize",
             unsafeAllowLinkedLibraries: true,
         });
+        const address = await domainsProxy.getAddress();
 
-        return { domainsContract, owner, addr1 };
+        const domainRegistryV2 = await ethers.getContractFactory("DomainRegistryV2", {
+            libraries: {
+                DomainParserLibrary: domainParserLibrary,
+            }
+        });
+        const domainsContract = await upgrades.upgradeProxy(address, domainRegistryV2, {
+            unsafeAllowLinkedLibraries: true,
+        });
+
+        return { domainsContract, owner, addr1, addr2 };
     }
 
     beforeEach(async () => {
         contractState = await loadFixture(deployTokenFixture);
     });
 
-    describe("Deployment V1", function () {
+    describe("Deployment V2", function () {
         describe('Initialization', function () {
             it("Should set owner correctly", async function () {
                 const { domainsContract, owner } = contractState;
@@ -161,7 +172,7 @@ describe("DomainRegistry contract", function () {
                 });
             });
 
-            it("Should block amount and transfer to owner after withdraw", async function () {
+            it("Should take domain price in ether when assign domain 1 level", async function () {
                 const { domainsContract, addr1, owner } = contractState;
 
                 const tx = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
@@ -174,6 +185,27 @@ describe("DomainRegistry contract", function () {
                 await expect(tx2).to.changeEtherBalances(
                     [owner],
                     [priceLevel1Domain]
+                );
+            });
+
+            it("Should reward parent domain owner when assign domain 2 level", async function () {
+                const { domainsContract, addr1, addr2, owner } = contractState;
+
+                await domainsContract.connect(addr1).registerDomain('com', { value: ether });
+                const tx = await domainsContract.connect(addr2).registerDomain('test.com', { value: ether });
+
+                await expect(tx).to.changeEtherBalances(
+                    [addr2, addr1],
+                    [
+                        -priceLevel2Domain,
+                        priceLevel2Domain * BigInt(10) / BigInt(100),
+                    ]
+                );
+
+                const tx2 = await domainsContract.connect(addr2).withdraw();
+                await expect(tx2).to.changeEtherBalances(
+                    [owner],
+                    [priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)]
                 );
             });
         });
