@@ -163,7 +163,7 @@ describe("DomainRegistry contract", function () {
             it("Should take domain price in ether when assign domain 1 level", async function () {
                 const { domainsContract, addr1, owner } = contractState;
 
-                const tx1 = await domainsContract.connect(addr1).registerDomain('com', { value: ether });
+                const tx1 = await domainsContract.connect(addr1).registerDomain('com', { value: priceLevel1Domain });
                 await expect(tx1).to.changeEtherBalances(
                     [addr1],
                     [-priceLevel1Domain]
@@ -179,8 +179,8 @@ describe("DomainRegistry contract", function () {
             it("Should reward parent domain owner when assign domain 2 level", async function () {
                 const { domainsContract, addr1, addr2, owner } = contractState;
 
-                await domainsContract.connect(addr1).registerDomain('com', { value: ether });
-                const tx = await domainsContract.connect(addr2).registerDomain('test.com', { value: ether });
+                await domainsContract.connect(addr1).registerDomain('com', { value: priceLevel1Domain });
+                const tx = await domainsContract.connect(addr2).registerDomain('test.com', { value: priceLevel2Domain });
                 await expect(tx).to.changeEtherBalances(
                     [addr2],
                     [-priceLevel2Domain]

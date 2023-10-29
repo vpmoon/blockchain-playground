@@ -116,11 +116,6 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         shares[owner()] += ownerReward;
 
         domains[rootDomain] = msg.sender;
-
-        uint256 excess = msg.value - price;
-        if (excess > 0) {
-            payable(msg.sender).transfer(excess);
-        }
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
