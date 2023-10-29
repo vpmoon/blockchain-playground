@@ -21,8 +21,6 @@ async function main() {
         unsafeAllowLinkedLibraries: true,
     });
     console.log("DomainRegistryV1 deployed to:", await proxyContract.getAddress());
-    console.log("stringParserLibraryDeployed deployed to:", await stringParserLibraryDeployed.getAddress());
-    console.log("domainParserLibraryContract deployed to:", await domainParserLibraryContract.getAddress());
 }
 
 main().catch((error) => {
