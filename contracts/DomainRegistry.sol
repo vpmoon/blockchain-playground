@@ -163,7 +163,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         payable(msg.sender).transfer(share);
     }
 
-    /// @notice Registers a domain, transferring ownership to the sender and rewarding the parent domain owner
+    /// @notice Registers a domain, store balance into shares so can be withdrown later
     /// @param domainName The domain name to register
     function registerDomain(string memory domainName) external payable checkDomainLength(domainName) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
