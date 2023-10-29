@@ -36,9 +36,9 @@ error DomainRegistryDomainIsNotRegistered(string domainName);
 /// @author Vika Petrenko
 /// @title Contract for domain registration (Version 1)
 contract DomainRegistry is Initializable, OwnableUpgradeable {
-    mapping(address => uint256) private shares;
+    mapping(address => uint256) private _shares;
     mapping(uint256 => uint256) public domainLevelPrices;
-    mapping(string => address) private domains;
+    mapping(string => address) private _domains;
 
     /// @notice Event emitted when a domain is successfully registered
     /// @param controller The address registering the domain
@@ -97,7 +97,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         uint256 level = DomainParserLibrary.getDomainLevel(domainName);
         if (level != uint256(1)) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
-            if (domains[parentDomain] == address(0)) {
+            if (_domains[parentDomain] == address(0)) {
                 revert DomainRegistryParentDomainNotExists({ domainName: domainName });
             }
         }
@@ -107,7 +107,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     /// @notice Modifier to check if a domain is available for registration
     /// @param domainName The domain name to check for availability
     modifier checkDomainAvailability(string memory domainName) {
-        if (domains[domainName] != address(0)) {
+        if (_domains[domainName] != address(0)) {
             revert DomainRegistryDomainIsAlreadyReserved({ domainName: domainName });
         }
         _;
@@ -127,10 +127,10 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     /// @notice Modifier to check if the sender is the owner of the domain when releasing it
     /// @param domainName The domain name to check ownership for
     modifier checkDomainReleasing(string memory domainName) {
-        if (domains[domainName] == address(0)) {
+        if (_domains[domainName] == address(0)) {
             revert DomainRegistryDomainIsNotRegistered({ domainName: domainName });
         }
-        if (domains[domainName] != msg.sender) {
+        if (_domains[domainName] != msg.sender) {
             revert DomainRegistryOnlyDomainOwnerAllowed({ domainName: domainName });
         }
         _;
@@ -142,7 +142,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     function getDomain(string memory domainName) public view returns (address) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
-        return domains[rootDomain];
+        return _domains[rootDomain];
     }
 
     /// @notice Validates domain registration by checking availability, parent existence, and ETN sent
@@ -155,11 +155,11 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
 
     /// @notice Allows an owner to withdraw their accumulated rewards
     function withdraw() external {
-        uint256 share = shares[msg.sender];
+        uint256 share = _shares[msg.sender];
         if (share == 0) {
             revert WithdrawNoBalanceAvailable();
         }
-        shares[msg.sender] = 0;
+        _shares[msg.sender] = 0;
         payable(msg.sender).transfer(share);
     }
 
@@ -169,7 +169,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         validateDomainRegistration(rootDomain);
         string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
-        address parentDomainOwner = domains[parentDomain];
+        address parentDomainOwner = _domains[parentDomain];
         uint256 price = getDomainPrice(rootDomain);
 
         // parent domain reward
@@ -179,13 +179,13 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         } else {
             parentReward = (price * REWARD_PERCENT_OWNER) / 100;
         }
-        shares[parentDomainOwner] = parentReward;
+        _shares[parentDomainOwner] = parentReward;
 
         // contract owner
         uint256 ownerReward = price - parentReward;
-        shares[owner()] += ownerReward;
+        _shares[owner()] += ownerReward;
 
-        domains[rootDomain] = msg.sender;
+        _domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
@@ -194,7 +194,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     function unregisterDomain(
         string memory domainName
     ) external checkDomainLength(domainName) checkDomainReleasing(domainName) {
-        delete domains[domainName];
+        delete _domains[domainName];
 
         emit DomainReleased(msg.sender, domainName);
     }
