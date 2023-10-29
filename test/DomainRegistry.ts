@@ -170,7 +170,7 @@ describe("DomainRegistry contract", function () {
                     [-priceLevel1Domain]
                 );
 
-                const tx2 = await domainsContract.connect(addr1).withdraw();
+                const tx2 = await domainsContract.connect(owner).withdraw();
                 await expect(tx2).to.changeEtherBalances(
                     [owner],
                     [priceLevel1Domain]

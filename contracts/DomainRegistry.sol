@@ -83,7 +83,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     function withdraw() external {
         uint share = shares[msg.sender];
         shares[msg.sender] = 0;
-        payable(owner()).transfer(share);
+        payable(msg.sender).transfer(share);
     }
 
     function registerDomain(string memory domainName) external payable
@@ -94,7 +94,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
 
         uint256 price = getDomainPrice(rootDomain);
 
-        shares[msg.sender] += price;
+        shares[owner()] += price;
 
         uint256 excess = msg.value - price;
         if (excess > 0) {
