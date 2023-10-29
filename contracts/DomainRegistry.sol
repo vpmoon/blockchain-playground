@@ -5,6 +5,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./DomainParserLibrary.sol";
 
+error WithdrawNoBalanceAvailable();
+
 contract DomainRegistry is Initializable, OwnableUpgradeable {
     mapping(address => uint) private shares;
     mapping(uint => uint) public domainLevelPrices;
@@ -84,6 +86,9 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
 
     function withdraw() external {
         uint share = shares[msg.sender];
+        if (share == 0) {
+            revert WithdrawNoBalanceAvailable();
+        }
         shares[msg.sender] = 0;
         payable(msg.sender).transfer(share);
     }

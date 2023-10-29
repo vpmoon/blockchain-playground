@@ -198,6 +198,17 @@ describe("DomainRegistry contract", function () {
                     [priceLevel1Domain + priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)]
                 );
             });
+
+            it("Throws if no balance to withdraw", async () => {
+                const { domainsContract } = contractState;
+
+                await expect(domainsContract
+                    .withdraw())
+                    .to.be.revertedWithCustomError(
+                        domainsContract,
+                        'WithdrawNoBalanceAvailable'
+                    );
+            })
         });
 
         describe('Domain releasing', function () {
