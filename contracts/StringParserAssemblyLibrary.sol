@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+/// @author Vika Petrenko
+/// @title Library for working for strings using Assembly
 library StringParserAssemblyLibrary {
-
+    /// @notice Strip everything in the input string after a provided symbol
+    /// @param input The input string
+    /// @param symbol The symbol to search for
+    /// @return The string after the symbol
     function stripAfter(string memory input, string memory symbol) public pure returns (string memory) {
         uint256 inputLength;
         assembly {
@@ -49,5 +54,4 @@ library StringParserAssemblyLibrary {
 
         return substring;
     }
-
 }

@@ -67,14 +67,14 @@ describe("StringParserLibrary contract", function () {
 
         it("throws error if symbol has length > 1", async function () {
             await expect(stringParserLibrary.countSymbolOccurrences('test.ua', 'str'))
-                .to.be.revertedWith("Method to find occurrences supports only one symbol string");
+                .to.be.revertedWithCustomError(stringParserLibrary, 'StringParserOnlySymbolSupported');
         });
     });
 
     describe('split', () => {
         it("throws error if symbol has length > 1", async function () {
             await expect(stringParserLibrary.split('test.ua', 'str'))
-                .to.be.revertedWith("Method to find occurrences supports only one symbol string");
+                .to.be.revertedWithCustomError(stringParserLibrary, 'StringParserOnlySymbolSupported');
         });
 
         it("returns array of substring split by symbol", async function () {

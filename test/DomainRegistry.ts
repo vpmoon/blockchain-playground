@@ -113,14 +113,20 @@ describe("DomainRegistry contract", function () {
                 domainsContract.registerDomain('com', { value: priceLevel1Domain })
 
                 await expect(domainsContract.registerDomain('com', { value: priceLevel1Domain }))
-                    .to.be.revertedWith("Domain is already reserved");
+                    .to.be.revertedWithCustomError(
+                        domainsContract,
+                        'DomainRegistryDomainIsAlreadyReserved'
+                    );
             });
 
             it(`Should fail if domain length is not valid`, async function () {
                 const { domainsContract } = contractState;
 
                 await expect(domainsContract.registerDomain('c', { value: priceLevel1Domain }))
-                    .to.be.revertedWith("Domain length should be between 2 and 253");
+                    .to.be.revertedWithCustomError(
+                        domainsContract,
+                        'DomainRegistryDomainNameLengthIsNotValid'
+                    );
             });
 
             it("Should fail if not enough etn for registering domain", async function () {
@@ -129,7 +135,10 @@ describe("DomainRegistry contract", function () {
                 const etherToSend = ethers.parseEther("0.1");
 
                 await expect(domainsContract.connect(addr1).registerDomain('com', { value: etherToSend }))
-                    .to.be.revertedWith("Wrong ETH amount sent");
+                    .to.be.revertedWithCustomError(
+                        domainsContract,
+                        'DomainRegistryNoSufficientEtn'
+                    );
             });
 
             ['google.com', 'http://new.business.com', 'https://stg0.new.com.ua', 'demo.stg0.new.com.ua'].forEach((domain, i) => {
@@ -139,7 +148,10 @@ describe("DomainRegistry contract", function () {
                     domainsContract.registerDomain(domain, { value: eval(`priceLevel${i + 1}Domain`) })
 
                     await expect(domainsContract.registerDomain(domain, { value: ether }))
-                        .to.be.revertedWith("Parent domain doesn't exist");
+                        .to.be.revertedWithCustomError(
+                            domainsContract,
+                            'DomainRegistryParentDomainNotExists'
+                        );
                 });
             });
 
@@ -234,7 +246,10 @@ describe("DomainRegistry contract", function () {
                 await expect(domainsContract
                     .connect(addr1)
                     .unregisterDomain('com'))
-                    .to.be.revertedWith("Domain should be unregistered by the domain owner");
+                    .to.be.revertedWithCustomError(
+                        domainsContract,
+                        'DomainRegistryOnlyDomainOwnerAllowed'
+                    );
             });
 
             it("Should fail if unregistering already free domain", async function () {
@@ -243,7 +258,10 @@ describe("DomainRegistry contract", function () {
                 await expect(domainsContract
                     .connect(addr1)
                     .unregisterDomain('ua'))
-                    .to.be.revertedWith("Domain is not registered yet");
+                    .to.be.revertedWithCustomError(
+                        domainsContract,
+                        'DomainRegistryDomainIsNotRegistered'
+                    );
             });
         });
 
