@@ -177,7 +177,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         if (parentDomainOwner == address(0)) {
             parentReward = 0;
         } else {
-            parentReward = price * REWARD_PERCENT_OWNER / 100;
+            parentReward = (price * REWARD_PERCENT_OWNER) / 100;
         }
         shares[parentDomainOwner] = parentReward;
 
