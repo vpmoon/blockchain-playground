@@ -40,7 +40,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     modifier checkSufficientEtn(string memory domainName) {
         uint256 price = getDomainPrice(domainName);
 
-        require(msg.value >= price, "Insufficient ETH sent");
+        require(msg.value == price, "Wrong ETH amount sent");
         _;
     }
 
