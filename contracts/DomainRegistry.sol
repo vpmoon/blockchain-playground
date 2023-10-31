@@ -8,9 +8,9 @@ import "./DomainParserLibrary.sol";
 error WithdrawNoBalanceAvailable();
 
 contract DomainRegistry is Initializable, OwnableUpgradeable {
-    mapping(address => uint) private shares;
+    mapping(address => uint) private _shares;
     mapping(uint => uint) public domainLevelPrices;
-    mapping(string => address) domains;
+    mapping(string => address) _domains;
 
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
@@ -48,13 +48,13 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         uint256 level = DomainParserLibrary.getDomainLevel(domainName);
         if (level != uint256(1)) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
-            require(domains[parentDomain] != address(0), "Parent domain doesn't exist");
+            require(_domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
         _;
     }
 
     modifier checkDomainAvailability(string memory domainName) {
-        require(domains[domainName] == address(0), "Domain is already reserved");
+        require(_domains[domainName] == address(0), "Domain is already reserved");
         _;
     }
 
@@ -66,15 +66,15 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     modifier checkDomainReleasing(string memory domainName) {
-        require(domains[domainName] != address(0), "Domain is not registered yet");
-        require(domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
+        require(_domains[domainName] != address(0), "Domain is not registered yet");
+        require(_domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
         _;
     }
 
     function getDomain(string memory domainName) public view returns (address) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
-        return domains[rootDomain];
+        return _domains[rootDomain];
     }
 
     function validateDomainRegistration(string memory domainName) internal
@@ -85,11 +85,11 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     function withdraw() external {
-        uint share = shares[msg.sender];
+        uint share = _shares[msg.sender];
         if (share == 0) {
             revert WithdrawNoBalanceAvailable();
         }
-        shares[msg.sender] = 0;
+        _shares[msg.sender] = 0;
         payable(msg.sender).transfer(share);
     }
 
@@ -99,7 +99,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         validateDomainRegistration(rootDomain);
         string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
-        address parentDomainOwner = domains[parentDomain];
+        address parentDomainOwner = _domains[parentDomain];
         uint256 price = getDomainPrice(rootDomain);
 
         // parent domain reward
@@ -109,13 +109,13 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         } else {
             parentReward = price * REWARD_PERCENT_OWNER / 100;
         }
-        shares[parentDomainOwner] = parentReward;
+        _shares[parentDomainOwner] = parentReward;
 
         // contract owner
         uint256 ownerReward = price - parentReward;
-        shares[owner()] += ownerReward;
+        _shares[owner()] += ownerReward;
 
-        domains[rootDomain] = msg.sender;
+        _domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
@@ -123,7 +123,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         checkDomainLength(domainName)
         checkDomainReleasing(domainName)
     {
-        delete domains[domainName];
+        delete _domains[domainName];
 
         emit DomainReleased(msg.sender, domainName);
     }
