@@ -5,15 +5,19 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./DomainParserLibrary.sol";
 
+error WithdrawNoBalanceAvailable();
+
 contract DomainRegistry is Initializable, OwnableUpgradeable {
-    mapping(address => uint) public _shares;
+    mapping(address => uint) private _shares;
     mapping(uint => uint) public domainLevelPrices;
     mapping(string => address) _domains;
 
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    function initialize() initializer public {
+    uint256 public constant REWARD_PERCENT_OWNER = 10;
+
+    function reinitialize() public reinitializer(2) {
         __Ownable_init(msg.sender);
 
         setDomainLevelPrice(1, 0.75 ether);
@@ -24,7 +28,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
-        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
+        uint256 level = DomainParserLibrary.getDomainLevel(domainName);
 
         return domainLevelPrices[level];
     }
@@ -36,13 +40,13 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     modifier checkSufficientEtn(string memory domainName) {
         uint256 price = getDomainPrice(domainName);
 
-        require(msg.value >= price, "Insufficient ETH sent");
+        require(msg.value == price, "Wrong ETH amount sent");
         _;
     }
 
     modifier checkDomainParent(string memory domainName) {
-        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
-        if (level != uint8(1)) {
+        uint256 level = DomainParserLibrary.getDomainLevel(domainName);
+        if (level != uint256(1)) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
             require(_domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
@@ -82,6 +86,9 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
 
     function withdraw() external {
         uint share = _shares[msg.sender];
+        if (share == 0) {
+            revert WithdrawNoBalanceAvailable();
+        }
         _shares[msg.sender] = 0;
         payable(msg.sender).transfer(share);
     }
@@ -91,15 +98,22 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
     {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         validateDomainRegistration(rootDomain);
-
+        string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
+        address parentDomainOwner = _domains[parentDomain];
         uint256 price = getDomainPrice(rootDomain);
 
-        _shares[owner()] += price;
-
-        uint256 excess = msg.value - price;
-        if (excess > 0) {
-            payable(msg.sender).transfer(excess);
+        // parent domain reward
+        uint256 parentReward;
+        if (parentDomainOwner == address(0)) {
+            parentReward = 0;
+        } else {
+            parentReward = price * REWARD_PERCENT_OWNER / 100;
         }
+        _shares[parentDomainOwner] = parentReward;
+
+        // contract owner
+        uint256 ownerReward = price - parentReward;
+        _shares[owner()] += ownerReward;
 
         _domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
