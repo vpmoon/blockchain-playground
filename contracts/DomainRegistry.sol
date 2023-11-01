@@ -1,32 +1,36 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./DomainParserLibrary.sol";
 
-contract DomainRegistry is Ownable {
-    using EnumerableMap for EnumerableMap.UintToUintMap;
-
-    EnumerableMap.UintToUintMap private domainLevelPrices;
-
-    mapping(string => address) domains;
+contract DomainRegistry is Initializable, OwnableUpgradeable {
+    mapping(address => uint) public _shares;
+    mapping(uint => uint) public domainLevelPrices;
+    mapping(string => address) _domains;
 
     event DomainRegistered(address indexed controller, string domainName);
     event DomainReleased(address indexed controller, string domainName);
 
-    constructor() Ownable(msg.sender) {
+    function initialize() initializer public {
+        __Ownable_init(msg.sender);
+
+        setDomainLevelPrice(1, 0.75 ether);
+        setDomainLevelPrice(2, 0.5 ether);
+        setDomainLevelPrice(3, 0.25 ether);
+        setDomainLevelPrice(4, 0.15 ether);
+        setDomainLevelPrice(5, 0.1 ether);
     }
 
     function getDomainPrice(string memory domainName) public view returns (uint256) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        uint8 level = DomainParserLibrary.getDomainLevel(rootDomain);
+        uint8 level = DomainParserLibrary.getDomainLevel(domainName);
 
-        return domainLevelPrices.get(level);
+        return domainLevelPrices[level];
     }
 
     function setDomainLevelPrice(uint256 level, uint256 price) public onlyOwner {
-        domainLevelPrices.set(level, price);
+        domainLevelPrices[level] = price;
     }
 
     modifier checkSufficientEtn(string memory domainName) {
@@ -40,14 +44,13 @@ contract DomainRegistry is Ownable {
         uint8 level = DomainParserLibrary.getDomainLevel(domainName);
         if (level != uint8(1)) {
             string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
-            require(domains[parentDomain] != address(0), "Parent domain doesn't exist");
+            require(_domains[parentDomain] != address(0), "Parent domain doesn't exist");
         }
         _;
     }
 
     modifier checkDomainAvailability(string memory domainName) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        require(domains[rootDomain] == address(0), "Domain is already reserved");
+        require(_domains[domainName] == address(0), "Domain is already reserved");
         _;
     }
 
@@ -59,34 +62,46 @@ contract DomainRegistry is Ownable {
     }
 
     modifier checkDomainReleasing(string memory domainName) {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        require(domains[domainName] != address(0), "Domain is not registered yet");
-        require(domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
+        require(_domains[domainName] != address(0), "Domain is not registered yet");
+        require(_domains[domainName] == msg.sender, "Domain should be unregistered by the domain owner");
         _;
     }
 
     function getDomain(string memory domainName) public view returns (address) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
 
-        return domains[rootDomain];
+        return _domains[rootDomain];
     }
 
-    function registerDomain(string memory domainName) external payable
-        checkDomainLength(domainName)
+    function validateDomainRegistration(string memory domainName) internal
         checkDomainParent(domainName)
         checkDomainAvailability(domainName)
         checkSufficientEtn(domainName)
     {
-        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        uint256 price = getDomainPrice(domainName);
+    }
 
-        payable(owner()).transfer(price);
+    function withdraw() external {
+        uint share = _shares[msg.sender];
+        _shares[msg.sender] = 0;
+        payable(msg.sender).transfer(share);
+    }
+
+    function registerDomain(string memory domainName) external payable
+        checkDomainLength(domainName)
+    {
+        string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
+        validateDomainRegistration(rootDomain);
+
+        uint256 price = getDomainPrice(rootDomain);
+
+        _shares[owner()] += price;
+
         uint256 excess = msg.value - price;
         if (excess > 0) {
             payable(msg.sender).transfer(excess);
         }
 
-        domains[rootDomain] = msg.sender;
+        _domains[rootDomain] = msg.sender;
         emit DomainRegistered(msg.sender, rootDomain);
     }
 
@@ -94,7 +109,7 @@ contract DomainRegistry is Ownable {
         checkDomainLength(domainName)
         checkDomainReleasing(domainName)
     {
-        delete domains[domainName];
+        delete _domains[domainName];
 
         emit DomainReleased(msg.sender, domainName);
     }
