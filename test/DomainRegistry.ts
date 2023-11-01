@@ -191,7 +191,7 @@ describe("DomainRegistry contract", function () {
                 );
             });
 
-            it("Should reward parent domain owner when assign domain 2 level", async function () {
+            it("Should reward parent domain owner and contract owner when assign domain 2 level", async function () {
                 const { domainsContract, addr1, addr2, owner } = contractState;
 
                 await domainsContract.connect(addr1).registerDomain('com', { value: priceLevel1Domain });
@@ -211,6 +211,23 @@ describe("DomainRegistry contract", function () {
                 await expect(tx3).to.changeEtherBalances(
                     [owner],
                     [priceLevel1Domain + priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)]
+                );
+            });
+
+            it("Should collect etn for parent domain", async function () {
+                const { domainsContract, addr1, addr2, owner } = contractState;
+
+                await domainsContract.connect(addr1).registerDomain('com', { value: priceLevel1Domain });
+                await domainsContract.connect(addr2).registerDomain('test.com', { value: priceLevel2Domain });
+                await domainsContract.connect(owner).registerDomain('domain.com', { value: priceLevel2Domain });
+
+                const tx = await domainsContract.connect(addr1).withdraw();
+                await expect(tx).to.changeEtherBalances(
+                    [addr1],
+                    [
+                        priceLevel2Domain * BigInt(10) / BigInt(100) +
+                        priceLevel2Domain * BigInt(10) / BigInt(100)
+                    ],
                 );
             });
 

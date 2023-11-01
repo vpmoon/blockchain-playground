@@ -179,7 +179,7 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
         } else {
             parentReward = (price * REWARD_PERCENT_OWNER) / 100;
         }
-        _shares[parentDomainOwner] = parentReward;
+        _shares[parentDomainOwner] += parentReward;
 
         // contract owner
         uint256 ownerReward = price - parentReward;
