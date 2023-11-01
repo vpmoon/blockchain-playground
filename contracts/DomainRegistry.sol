@@ -33,6 +33,10 @@ error DomainRegistryOnlyDomainOwnerAllowed(string domainName);
 /// @param domainName The domain name that is not registered
 error DomainRegistryDomainIsNotRegistered(string domainName);
 
+/// @notice Error when payment not sent
+/// @param controller The controller address of caller
+error DomainRegistryPaymentReverted(address controller);
+
 /// @author Vika Petrenko
 /// @title Contract for domain registration (Version 1)
 contract DomainRegistry is Initializable, OwnableUpgradeable {
@@ -160,7 +164,10 @@ contract DomainRegistry is Initializable, OwnableUpgradeable {
             revert WithdrawNoBalanceAvailable();
         }
         _shares[msg.sender] = 0;
-        payable(msg.sender).transfer(share);
+        (bool success, ) = msg.sender.call{value: share}("");
+        if (!success) {
+            revert DomainRegistryPaymentReverted({ controller: msg.sender });
+        }
     }
 
     /// @notice Registers a domain, store balance into shares so can be withdrown later
