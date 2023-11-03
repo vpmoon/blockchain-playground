@@ -10,7 +10,9 @@
     "hardhat:test": "hardhat test",
     "hardhat:test:gas": "REPORT_GAS=true COINMARKETCAP_API_KEY=$(security find-generic-password -w -s 'Coinmarketcap API Key') hardhat test",
     "hardhat:deploy": "hardhat run scripts/deploy.js --network localhost",
-    "hardhat:upgrade": "hardhat run scripts/upgrade.js --network localhost"
+    "hardhat:upgrade": "hardhat run scripts/upgrade.js --network localhost",
+    "hardhat:deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "hardhat:upgrade:sepolia": "hardhat run scripts/upgrade.js --network sepolia"
   },
   "keywords": [],
   "author": "",
