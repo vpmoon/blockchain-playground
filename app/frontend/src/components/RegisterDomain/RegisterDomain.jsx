@@ -1,7 +1,9 @@
 import React, {useState, useEffect} from 'react';
 import {getContract, getDomainPrice, registerDomain} from "../../actions";
+import { ethers } from 'ethers'
 
 export function RegisterDomain() {
+    const [isLoading, setIsLoading] = useState(false);
     const [isLoaded, setLoaded] = useState(false);
     const [price, setPrice] = useState(0);
     const [formData, setFormData] = useState({
@@ -31,29 +33,63 @@ export function RegisterDomain() {
         setPrice(Number(price));
         setLoaded(true);
     };
+    const getETHPrice = (ethPrice) => {
+        return ethers.formatEther(ethPrice)
+    }
+
+    const getUSDTPrice = (usdtPrice) => {
+        const price = Number(usdtPrice);
+        return ethers.formatUnits(price, 8)
+    }
+
+    const getPrices = async (currency = 'etn') => {
+        setIsLoading(true);
+        const isEtn = currency === 'etn';
+
+        const contract = await getContract();
+        const level1 = await getDomainPrice(contract, 'ua', currency);
+
+        const level2 = await getDomainPrice(contract, 'ua.com', currency);
+        const level3 = await getDomainPrice(contract, 'ua.com.ua', currency);
+        const level4 = await getDomainPrice(contract, 'demo.ua.com.ua', currency);
+        const level5 = await getDomainPrice(contract, 'stg0.demo.ua.com.ua', currency);
+        console.log(level1, level2, level3)
+        setPrices({
+            level1: isEtn ? getETHPrice(level1) : getUSDTPrice(level1),
+            level2: isEtn ? getETHPrice(level2) : getUSDTPrice(level2),
+            level3: isEtn ? getETHPrice(level3) : getUSDTPrice(level3),
+            level4: isEtn ? getETHPrice(level4) : getUSDTPrice(level4),
+            level5: isEtn ? getETHPrice(level5) : getUSDTPrice(level5),
+        });
+        setIsLoading(false);
+    }
 
     useEffect(() => {
-        (async () => {
-            const contract = await getContract();
-            const level1 = await getDomainPrice(contract, 'ua');
-            const level2 = await getDomainPrice(contract, 'ua.com');
-            const level3 = await getDomainPrice(contract, 'ua.com.ua');
-            const level4 = await getDomainPrice(contract, 'demo.ua.com.ua');
-            const level5 = await getDomainPrice(contract, 'stg0.demo.ua.com.ua');
-            setPrices({level1, level2, level3, level4, level5});
-        })()
+        getPrices();
     }, [getDomainPrice]);
+
+    useEffect(() => {
+        getPrices(formData.currency);
+    }, [formData.currency]);
 
     return (
         <div>
             <h2>Register new domain</h2>
             <div style={{marginBottom: '30px'}}>
                 <h3>Prices</h3>
-                <div>1 level - 2$</div>
-                <div>2 level - 1.5$</div>
-                <div>3 level - 1$</div>
-                <div>4 level - 0.5$</div>
-                <div>5 level - 0.25$</div>
+                {
+                    isLoading ? (
+                        '.....Price is loading.....'
+                    ): (
+                        <>
+                            <div>1 level - {prices?.level1} {formData.currency}</div>
+                            <div>2 level - {prices?.level2} {formData.currency}</div>
+                            <div>3 level - {prices?.level3} {formData.currency}</div>
+                            <div>4 level - {prices?.level4} {formData.currency}</div>
+                            <div>5 level - {prices?.level5} {formData.currency}</div>
+                        </>
+                    )
+                }
             </div>
             <form onSubmit={handleSubmit}>
                 <div className="input-container">

@@ -22,18 +22,18 @@ export const getAccount = async () => {
 }
 
 export const getContract = () => {
-    console.log('abi', contractArtifact.abi)
+    // console.log('abi', contractArtifact.abi)
     const contract = new ethers.Contract(
         env.REACT_APP_CONTRACT_URL,
         contractArtifact.abi,
         wallet,
     );
-    console.log('contract=', contract)
+    // console.log('contract=', contract)
     return contract;
 }
 
-export const getDomainPrice = async (contract, domain) => {
-    return contract.getDomainPrice(domain);
+export const getDomainPrice = async (contract, domain, currency) => {
+    return contract.getDomainPrice(domain, currency);
 }
 
 export const getController = async (contract, domain) => {

@@ -85,7 +85,7 @@ contract DomainRegistry is OwnableUpgradeable {
             return domainLevelPrices[level];
         } else {
             (, int256 price, , , ) = priceFeed.latestRoundData();
-            return uint256(price);
+            return (domainLevelPrices[level] / 10*18) * (uint256(price) / 10**8);
         }
     }
 
