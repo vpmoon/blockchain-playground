@@ -12,7 +12,9 @@
     "hardhat:deploy": "hardhat run scripts/deploy.js --network localhost",
     "hardhat:upgrade": "hardhat run scripts/upgrade.js --network localhost",
     "lint": "solhint 'contracts/**/*.sol' --fix",
-    "prettier": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
+    "prettier": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'",
+    "hardhat:deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "hardhat:upgrade:sepolia": "hardhat run scripts/upgrade.js --network sepolia"
   },
   "keywords": [],
   "author": "",
@@ -28,8 +30,11 @@
     "solhint": "^3.6.2"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.8.0",
     "@openzeppelin/contracts": "^5.0.0",
     "@openzeppelin/contracts-upgradeable": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "solc": "^0.8.20",
     "web3": "^4.1.2"
   }
