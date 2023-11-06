@@ -4,7 +4,7 @@ import { getContract, releaseDomain } from "../../actions";
 export function ReleaseDomain() {
     const [isLoaded, setLoaded] = useState(false);
     const [formData, setFormData] = useState({
-        domainName: 'com',
+        domainName: '',
     });
 
     const handleInputChange = (e) => {
