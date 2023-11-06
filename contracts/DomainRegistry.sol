@@ -169,7 +169,7 @@ contract DomainRegistry is OwnableUpgradeable {
         if (isEtn) {
             return _shares[controller];
         } else {
-            return _tokens[controller];
+            return token.balanceOf(controller);
         }
     }
 

@@ -1,11 +1,6 @@
 const { ethers } = require('ethers');
 const { config } = require('./config');
 
-console.log(config.jsonRpcUrl);
-console.log(config.contractAddress);
-console.log(config.contractAbi);
-console.log(config.mnemonic);
-
 function getContract() {
     const { rpcUrl, address, abi, mnemonic } = config;
     const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -14,15 +9,10 @@ function getContract() {
     return new ethers.Contract(address, abi, wallet);
 }
 
-async function withdrawEtn() {
+async function withdraw(currency) {
     const contract = getContract();
 
-    await contract.withdraw({ gasLimit: 30000000 });
+    await contract.withdraw(currency, { gasLimit: 30000000 });
 }
 
-async function withdrawUsdt() {
-    console.log(config)
-    return 'usdt return'
-}
-
-module.exports = { withdrawEtn, withdrawUsdt }
+module.exports = { withdraw }

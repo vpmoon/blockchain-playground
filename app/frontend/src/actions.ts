@@ -21,8 +21,9 @@ export const getAccount = async () => {
     return accounts[0];
 }
 
+console.log('abi', contractArtifact.abi)
+
 export const getContract = () => {
-    // console.log('abi', contractArtifact.abi)
     const contract = new ethers.Contract(
         env.REACT_APP_CONTRACT_URL,
         contractArtifact.abi,
@@ -57,5 +58,7 @@ export const releaseDomain = async (contract, domain) => {
 }
 
 export const withdraw = async (contract, currency) => {
-    return contract.withdraw(currency)
+    const tx = await contract.withdraw(currency, { gasLimit: 30000000 })
+    await tx.wait();
+    return tx;
 }

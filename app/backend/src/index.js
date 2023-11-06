@@ -1,15 +1,12 @@
-const { withdrawEtn, withdrawUsdt } = require('./service');
+const { withdraw } = require('./service');
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.post('/withdraw/etn', async (req, res) => {
-    await withdrawEtn();
-    res.end();
-});
+app.post('/withdraw/:currency', async (req, res) => {
+    const { currency } = req.params;
 
-app.post('/withdraw/usdt', async (req, res) => {
-    await withdrawUsdt();
+    await withdraw(currency);
     res.end();
 });
 
