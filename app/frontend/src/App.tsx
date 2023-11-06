@@ -12,8 +12,19 @@ import './styles/input.css';
 import './styles/title.css';
 import './styles/container.css';
 import './styles/form.css';
+import {useEffect} from "react";
+import {subscribe} from "./actions";
 
 export default function App() {
+
+    const doSubscribe = async () => {
+        await subscribe();
+    }
+
+    useEffect(() => {
+        doSubscribe()
+    }, []);
+
   return (
     <div>
       <div className="title">

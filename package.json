@@ -14,7 +14,8 @@
     "lint": "solhint 'contracts/**/*.sol' --fix",
     "prettier": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'",
     "hardhat:deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
-    "hardhat:upgrade:sepolia": "hardhat run scripts/upgrade.js --network sepolia"
+    "hardhat:upgrade:sepolia": "hardhat run scripts/upgrade.js --network sepolia",
+    "hardhat:deploy:goerli": "hardhat run scripts/deploy.js --network goerli"
   },
   "keywords": [],
   "author": "",

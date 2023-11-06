@@ -10,6 +10,10 @@ const config: HardhatUserConfig = {
       url: process.env.INFURA_API_KEY,
       accounts: [process.env.SEPOLIA_PRIVATE_KEY]
     },
+    goerli: {
+      url: 'https://goerli.infura.io/v3/3d5806bda8dd4886989d2fcb4ef71e2f',
+      accounts: [process.env.SEPOLIA_PRIVATE_KEY]
+    },
   },
 };
 

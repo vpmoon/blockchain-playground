@@ -24,21 +24,15 @@ export const getAccount = async () => {
 console.log('abi', contractArtifact.abi)
 
 export const getContract = () => {
-    const contract = new ethers.Contract(
+    return new ethers.Contract(
         env.REACT_APP_CONTRACT_URL,
         contractArtifact.abi,
         wallet,
     );
-    // console.log('contract=', contract)
-    return contract;
 }
 
 export const getDomainPrice = async (contract, domain, currency) => {
     return contract.getDomainPrice(domain, currency);
-}
-
-export const getController = async (contract, domain) => {
-    return contract.getDomain(domain);
 }
 
 export const getDomainAddress = async (contract, domain) => {
@@ -61,4 +55,37 @@ export const withdraw = async (contract, currency) => {
     const tx = await contract.withdraw(currency, { gasLimit: 30000000 })
     await tx.wait();
     return tx;
+}
+
+export const getEventsList = async () => {
+    const account = await getAccount();
+
+    const items = JSON.parse(localStorage.getItem(account)) || [];
+
+    return items;
+}
+
+export const subscribe = async () => {
+    const contract = await getContract();
+    const items = await getEventsList();
+    const account = await getAccount();
+
+    contract.on("DomainRegistered", (from, domainName) => {
+        console.log("DomainRegistered event", domainName);
+
+        items.push({
+            from,
+            domainName,
+            date: new Date(),
+        });
+        localStorage.setItem(account, JSON.stringify(items));
+    });
+
+    contract.on("DomainReleased", (from, domainName) => {
+        console.log("DomainReleased event", domainName);
+
+        const filteredItems = items.filter((item) => item.domainName !== domainName);
+
+        localStorage.setItem(account, JSON.stringify(filteredItems));
+    });
 }
