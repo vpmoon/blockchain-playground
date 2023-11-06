@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {getContract, getControllerShares} from "../../actions";
+import { ethers } from 'ethers'
 
 export function Balances() {
     const [response, setResponse] = useState('');
@@ -8,7 +9,12 @@ export function Balances() {
         currency: 'etn',
     });
 
+    const resetState = () => {
+        setResponse('');
+    }
+
     const handleInputChange = (e) => {
+        resetState();
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
@@ -20,13 +26,18 @@ export function Balances() {
         const { address, currency } = formData;
         const contract = await getContract();
 
-        if (currency === 'etn') {
-            const response = await getControllerShares(contract, address);
-            setResponse(response);
-        } else {
-            // TODO usdt
-        }
+        const response = await getControllerShares(contract, address, currency);
+        setResponse(formData.currency === 'etn' ? getETHPrice(response) : getUSDTPrice(response));
     };
+
+    const getETHPrice = (ethPrice) => {
+        return ethers.formatEther(ethPrice)
+    }
+
+    const getUSDTPrice = (usdtPrice) => {
+        const price = Number(usdtPrice);
+        return ethers.formatUnits(price, 8)
+    }
 
     return (
         <div>
@@ -78,7 +89,7 @@ export function Balances() {
                     <>
                         <hr/>
                         <div className="response">
-                            {response}
+                            {response} {formData.currency}
                         </div>
                     </>
                 )

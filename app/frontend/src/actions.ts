@@ -44,8 +44,8 @@ export const getDomainAddress = async (contract, domain) => {
     return contract.getDomain(domain);
 }
 
-export const getControllerShares = async (contract, address) => {
-    return contract.getControllerShares(address);
+export const getControllerShares = async (contract, address, currency) => {
+    return contract.getControllerShares(address, currency);
 }
 
 export const registerDomain = async (contract, domain, price, currency) => {
