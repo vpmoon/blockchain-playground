@@ -22,3 +22,11 @@
 .button-danger:hover {
     background-color: #c85858;
 }
+
+.button[disabled] {
+    background-color: #cccccc; /* Gray background */
+    color: #666666; /* Slightly darker text color */
+    cursor: not-allowed; /* Disable cursor on hover */
+    border: none; /* No border */
+    opacity: 0.6; /* Reduced opacity for a faded appearance */
+}

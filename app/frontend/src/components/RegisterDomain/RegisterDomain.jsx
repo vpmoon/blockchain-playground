@@ -3,7 +3,8 @@ import {getContract, getDomainPrice, registerDomain} from "../../actions";
 import { ethers } from 'ethers'
 
 export function RegisterDomain() {
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPriceLoading, setIsPriceLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [isLoaded, setLoaded] = useState(false);
     const [price, setPrice] = useState(0);
     const [formData, setFormData] = useState({
@@ -12,26 +13,33 @@ export function RegisterDomain() {
     });
     const [prices, setPrices] = useState();
 
+    const resetState = () => {
+        setPrice(0);
+        setLoaded(false);
+        setIsSaving(false);
+    }
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        console.log('NAA', name, value)
         setFormData({ ...formData, [name]: value });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setPrice(0);
-        setLoaded(false);
+        resetState();
+        setIsSaving(true);
 
         const { domainName, currency } = formData;
         const contract = await getContract();
-        const price = await getDomainPrice(contract, domainName);
+        const price = await getDomainPrice(contract, domainName, 'etn');
 
         const tx = await registerDomain(contract, domainName, price, currency);
         await tx.wait();
 
-        setPrice(Number(price));
+        const priceToDisplay = await getDomainPrice(contract, domainName, formData.currency);
+        setPrice(formData.currency === 'etn' ? getETHPrice(priceToDisplay) : getUSDTPrice(priceToDisplay));
         setLoaded(true);
+        setIsSaving(false);
     };
     const getETHPrice = (ethPrice) => {
         return ethers.formatEther(ethPrice)
@@ -43,7 +51,8 @@ export function RegisterDomain() {
     }
 
     const getPrices = async (currency = 'etn') => {
-        setIsLoading(true);
+        resetState();
+        setIsPriceLoading(true);
         const isEtn = currency === 'etn';
 
         const contract = await getContract();
@@ -53,7 +62,6 @@ export function RegisterDomain() {
         const level3 = await getDomainPrice(contract, 'ua.com.ua', currency);
         const level4 = await getDomainPrice(contract, 'demo.ua.com.ua', currency);
         const level5 = await getDomainPrice(contract, 'stg0.demo.ua.com.ua', currency);
-        console.log(level1, level2, level3)
         setPrices({
             level1: isEtn ? getETHPrice(level1) : getUSDTPrice(level1),
             level2: isEtn ? getETHPrice(level2) : getUSDTPrice(level2),
@@ -61,7 +69,7 @@ export function RegisterDomain() {
             level4: isEtn ? getETHPrice(level4) : getUSDTPrice(level4),
             level5: isEtn ? getETHPrice(level5) : getUSDTPrice(level5),
         });
-        setIsLoading(false);
+        setIsPriceLoading(false);
     }
 
     useEffect(() => {
@@ -78,7 +86,7 @@ export function RegisterDomain() {
             <div style={{marginBottom: '30px'}}>
                 <h3>Prices</h3>
                 {
-                    isLoading ? (
+                    isPriceLoading ? (
                         '.....Price is loading.....'
                     ): (
                         <>
@@ -130,7 +138,7 @@ export function RegisterDomain() {
                     </label>
                 </div>
                 <div>
-                    <button className="button" type="submit">Register domain</button>
+                    <button className="button" type="submit" disabled={isSaving}>Register domain</button>
                 </div>
             </form>
             {
@@ -138,7 +146,7 @@ export function RegisterDomain() {
                     <>
                         <hr/>
                         <div className="response">
-                            Domain has been successfully registered with price {price}{formData.currency}
+                            Domain has been successfully registered with price {price} {formData.currency}
                         </div>
                     </>
                 )
