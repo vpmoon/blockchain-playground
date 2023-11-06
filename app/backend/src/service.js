@@ -15,4 +15,10 @@ async function withdraw(currency) {
     await contract.withdraw(currency, { gasLimit: 30000000 });
 }
 
-module.exports = { withdraw }
+async function balance(address, currency) {
+    const contract = getContract();
+
+    return contract.getControllerShares(address, currency);
+}
+
+module.exports = { withdraw, balance }

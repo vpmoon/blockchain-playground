@@ -52,9 +52,7 @@ export const releaseDomain = async (contract, domain) => {
 }
 
 export const withdraw = async (contract, currency) => {
-    const tx = await contract.withdraw(currency, { gasLimit: 30000000 })
-    await tx.wait();
-    return tx;
+    return contract.withdraw(currency)
 }
 
 export const getEventsList = async () => {

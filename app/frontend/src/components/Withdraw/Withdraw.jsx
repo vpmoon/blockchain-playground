@@ -20,8 +20,9 @@ export function Withdraw() {
         setLoaded(false);
 
         const contract = await getContract();
-
+        console.log('CUR', formData.currency)
         const tx = await withdraw(contract, formData.currency);
+        console.log(tx)
         await tx.wait();
         setLoaded(true);
     };
