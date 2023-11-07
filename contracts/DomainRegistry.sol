@@ -66,7 +66,7 @@ contract DomainRegistry is OwnableUpgradeable {
         __Ownable_init(msg.sender);
 
         token = IERC20(msg.sender);
-        priceFeed = AggregatorV3Interface(0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e);
+        priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
 
         setDomainLevelPrice(1, 0.000000005 ether);
         setDomainLevelPrice(2, 0.000000004 ether);
@@ -85,7 +85,7 @@ contract DomainRegistry is OwnableUpgradeable {
             return domainLevelPrices[level];
         } else {
             (, int256 price, , , ) = priceFeed.latestRoundData();
-            return (domainLevelPrices[level] / 10*18) * (uint256(price) / 10**8);
+            return (domainLevelPrices[level]) * (uint256(price));
         }
     }
 

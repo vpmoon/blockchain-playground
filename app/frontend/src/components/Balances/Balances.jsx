@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {getContract, getControllerShares} from "../../actions";
-import { ethers } from 'ethers'
+import {getETHPrice, getUSDTPrice} from "../RegisterDomain/RegisterDomain";
 
 export function Balances() {
     const [response, setResponse] = useState('');
@@ -29,15 +29,6 @@ export function Balances() {
         const response = await getControllerShares(contract, address, currency);
         setResponse(formData.currency === 'etn' ? getETHPrice(response) : getUSDTPrice(response));
     };
-
-    const getETHPrice = (ethPrice) => {
-        return ethers.formatEther(ethPrice)
-    }
-
-    const getUSDTPrice = (usdtPrice) => {
-        const price = Number(usdtPrice);
-        return ethers.formatUnits(price, 8)
-    }
 
     return (
         <div>

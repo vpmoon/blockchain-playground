@@ -2,6 +2,14 @@ import React, {useState, useEffect} from 'react';
 import {getContract, getDomainPrice, registerDomain} from "../../actions";
 import { ethers } from 'ethers'
 
+export const getETHPrice = (ethPrice) => {
+    return ethers.formatEther(ethPrice)
+}
+
+export const getUSDTPrice = (usdtPrice) => {
+    return ethers.formatUnits(usdtPrice, 26)
+}
+
 export function RegisterDomain() {
     const [isPriceLoading, setIsPriceLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -41,14 +49,6 @@ export function RegisterDomain() {
         setLoaded(true);
         setIsSaving(false);
     };
-    const getETHPrice = (ethPrice) => {
-        return ethers.formatEther(ethPrice)
-    }
-
-    const getUSDTPrice = (usdtPrice) => {
-        const price = Number(usdtPrice);
-        return ethers.formatUnits(price, 8)
-    }
 
     const getPrices = async (currency = 'etn') => {
         resetState();
