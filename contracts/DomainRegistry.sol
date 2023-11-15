@@ -11,6 +11,10 @@ import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/interfaces/
 /// @param domainName The domain name for which ETN is insufficient
 error DomainRegistryNoSufficientEtn(string domainName);
 
+/// Error for insufficient Tokens sent during domain registration
+/// @param domainName The domain name for which Tokens is insufficient
+error DomainRegistryNoSufficientTokens(string domainName);
+
 /// Error for non-existent parent domain during domain registration
 /// @param domainName The domain name with a missing parent domain
 error DomainRegistryParentDomainNotExists(string domainName);
@@ -71,7 +75,7 @@ contract DomainRegistry is OwnableUpgradeable {
     event DomainReleased(address indexed controller, string domainName);
 
     uint256 public constant REWARD_PERCENT_OWNER = 10;
-    IERC20 public tokenAddress;
+    IERC20 public token;
     AggregatorV3Interface internal _priceFeed;
 
     /// @notice Reinitializes the contract and sets domain level prices
@@ -79,7 +83,7 @@ contract DomainRegistry is OwnableUpgradeable {
         __Ownable_init(msg.sender);
 
         _priceFeed = AggregatorV3Interface(_priceFeedAddress);
-        tokenAddress = IERC20(_tokenAddress);
+        token = IERC20(_tokenAddress);
 
         setDomainLevelPrice(1, 0.000000005 ether);
         setDomainLevelPrice(2, 0.000000004 ether);
@@ -113,11 +117,14 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @notice Modifier to check if the sender sent sufficient ETN (Ether) to register a domain
     /// @param domainName The domain name to check ETN for
     modifier checkSufficientEtn(string memory domainName, bool isEtn) {
+        uint256 price = getDomainPrice(domainName, isEtn);
         if (isEtn) {
-            uint256 price = getDomainPrice(domainName, isEtn);
-
             if (msg.value != price) {
                 revert DomainRegistryNoSufficientEtn({ domainName: domainName });
+            }
+        } else {
+            if (token.balanceOf(msg.sender) < price) {
+                revert DomainRegistryNoSufficientTokens({ domainName: domainName });
             }
         }
         _;
@@ -214,7 +221,7 @@ contract DomainRegistry is OwnableUpgradeable {
                 revert WithdrawNoBalanceAvailable();
             }
             _tokens[msg.sender] = 0;
-            try IERC20(tokenAddress).transfer(msg.sender, share) returns (bool success) {
+            try IERC20(token).transfer(msg.sender, share) returns (bool success) {
                 if (!success) {
                     revert DomainRegistryPaymentTokensReverted(msg.sender);
                 }
@@ -246,6 +253,7 @@ contract DomainRegistry is OwnableUpgradeable {
             _shares[parentDomainOwner] += parentReward;
         } else {
             _tokens[parentDomainOwner] += parentReward;
+            IERC20(token).transferFrom(msg.sender, address(parentDomainOwner) , parentReward);
         }
 
         // contract owner
@@ -254,6 +262,7 @@ contract DomainRegistry is OwnableUpgradeable {
             _shares[owner()] += ownerReward;
         } else {
             _tokens[owner()] += ownerReward;
+            IERC20(token).transferFrom(msg.sender, address(owner()) , ownerReward);
         }
 
         _domains[rootDomain] = msg.sender;
