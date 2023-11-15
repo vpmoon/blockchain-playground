@@ -7,6 +7,7 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
 import { AddressZero } from "@ethersproject/constants";
+import {token} from "../typechain-types/@openzeppelin/contracts";
 
 describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
@@ -30,15 +31,23 @@ describe("DomainRegistry contract", function () {
         });
         const domainParserLibrary = await domainParserLibraryFactory.deploy();
 
+        const mockTokenFactory = await ethers.getContractFactory("contracts/MockToken.sol:MockToken");
+        const mockTokenContract = await mockTokenFactory.connect(owner).deploy(BigInt(4 * (10 ** 40)));
+        const mockTokenContractAddress = await mockTokenContract.getAddress();
+
+        const mockPriceFeedFactory = await ethers.getContractFactory("contracts/MockPriceFeed.sol:MockPriceFeed");
+        const mockPriceFeedContract = await mockPriceFeedFactory.deploy(BigInt(2000 * (10 ** 18)), 18);
+        const mockPriceFeedContractAddress = await mockPriceFeedContract.getAddress();
+
         const domainRegistry = await ethers.getContractFactory("DomainRegistry", {
             libraries: {
                 DomainParserLibrary: domainParserLibrary,
             }
         });
         const domainsContract = await domainRegistry.deploy();
-        await domainsContract.initialize();
+        await domainsContract.initialize(mockPriceFeedContractAddress, mockTokenContractAddress);
 
-        return { domainsContract, owner, addr1, addr2 };
+        return { domainsContract, owner, addr1, addr2, mockTokenContract, mockPriceFeedContract };
     }
 
     beforeEach(async () => {
@@ -57,7 +66,7 @@ describe("DomainRegistry contract", function () {
         describe('Tracking events', function () {
             it("Should catch events when register and release", async function () {
                 const { domainsContract, owner } = contractState;
-                await expect(domainsContract.registerDomain('com', 'etn', { value:  priceLevel1Domain }))
+                await expect(domainsContract.registerDomain('com', true, { value:  priceLevel1Domain }))
                     .to.emit(domainsContract, 'DomainRegistered')
                     .withArgs(owner.address, 'com');
 
@@ -77,10 +86,10 @@ describe("DomainRegistry contract", function () {
                 await domainsContract.setDomainLevelPrice(3, ethers.parseEther("2.25"));
                 await domainsContract.setDomainLevelPrice(4, ethers.parseEther("2"));
 
-                const level1 = await domainsContract.getDomainPrice('ua', 'etn');
-                const level2 = await domainsContract.getDomainPrice('shop.ua', 'etn');
-                const level3 = await domainsContract.getDomainPrice('demo.shop.ua', 'etn');
-                const level4 = await domainsContract.getDomainPrice('stg0.demo.shop.ua', 'etn');
+                const level1 = await domainsContract.getDomainPrice('ua', true);
+                const level2 = await domainsContract.getDomainPrice('shop.ua', true);
+                const level3 = await domainsContract.getDomainPrice('demo.shop.ua', true);
+                const level4 = await domainsContract.getDomainPrice('stg0.demo.shop.ua', true);
 
                 expect(level1).to.equal(ethers.parseEther("2.75"));
                 expect(level2).to.equal(ethers.parseEther("2.5"));
@@ -96,11 +105,11 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe('Domain registration', function () {
+        describe('Domain registration in ETH', function () {
             it("Should register domain and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 
-                await domainsContract.connect(addr1).registerDomain('com', 'etn', { value:  priceLevel1Domain });
+                await domainsContract.connect(addr1).registerDomain('com', true, { value:  priceLevel1Domain });
 
                 const address = await domainsContract.getDomain('com');
 
@@ -110,9 +119,9 @@ describe("DomainRegistry contract", function () {
             it(`Should fail if domain is already reserved`, async function () {
                 const { domainsContract } = contractState;
 
-                domainsContract.registerDomain('com', 'etn', { value: priceLevel1Domain })
+                domainsContract.registerDomain('com', true, { value: priceLevel1Domain })
 
-                await expect(domainsContract.registerDomain('com', 'etn', { value: priceLevel1Domain }))
+                await expect(domainsContract.registerDomain('com', true, { value: priceLevel1Domain }))
                     .to.be.revertedWithCustomError(
                         domainsContract,
                         'DomainRegistryDomainIsAlreadyReserved'
@@ -122,7 +131,7 @@ describe("DomainRegistry contract", function () {
             it(`Should fail if domain length is not valid`, async function () {
                 const { domainsContract } = contractState;
 
-                await expect(domainsContract.registerDomain('c', 'etn', { value: priceLevel1Domain }))
+                await expect(domainsContract.registerDomain('c', true, { value: priceLevel1Domain }))
                     .to.be.revertedWithCustomError(
                         domainsContract,
                         'DomainRegistryDomainNameLengthIsNotValid'
@@ -134,7 +143,7 @@ describe("DomainRegistry contract", function () {
 
                 const etherToSend = ethers.parseEther("0.1");
 
-                await expect(domainsContract.connect(addr1).registerDomain('com', 'etn', { value: etherToSend }))
+                await expect(domainsContract.connect(addr1).registerDomain('com', true, { value: etherToSend }))
                     .to.be.revertedWithCustomError(
                         domainsContract,
                         'DomainRegistryNoSufficientEtn'
@@ -145,9 +154,9 @@ describe("DomainRegistry contract", function () {
                 it(`Should not allow to register ${domain} if parent domain doesn't exists`, async function () {
                     const { domainsContract } = contractState;
 
-                    domainsContract.registerDomain(domain, 'etn', { value: eval(`priceLevel${i + 1}Domain`) })
+                    domainsContract.registerDomain(domain, true, { value: eval(`priceLevel${i + 1}Domain`) })
 
-                    await expect(domainsContract.registerDomain(domain, 'etn', { value: ether }))
+                    await expect(domainsContract.registerDomain(domain, true, { value: ether }))
                         .to.be.revertedWithCustomError(
                             domainsContract,
                             'DomainRegistryParentDomainNotExists'
@@ -165,9 +174,9 @@ describe("DomainRegistry contract", function () {
                     const { domainsContract, owner } = contractState;
 
                     for (const [j, parent] of parents.entries()) {
-                        await domainsContract.registerDomain(parent, 'etn', { value: eval(`priceLevel${j + 1}Domain`) });
+                        await domainsContract.registerDomain(parent, true, { value: eval(`priceLevel${j + 1}Domain`) });
                     }
-                    await domainsContract.registerDomain(domain, 'etn', { value: eval(`priceLevel${i + 2}Domain`) });
+                    await domainsContract.registerDomain(domain, true, { value: eval(`priceLevel${i + 2}Domain`) });
 
                     const address = await domainsContract.getDomain(domain);
 
@@ -178,16 +187,16 @@ describe("DomainRegistry contract", function () {
             it("Should take domain price in ether when assign domain 1 level", async function () {
                 const { domainsContract, addr1, owner } = contractState;
 
-                const tx1 = await domainsContract.connect(addr1).registerDomain('com', 'etn', { value: priceLevel1Domain });
+                const tx1 = await domainsContract.connect(addr1).registerDomain('com', true, { value: priceLevel1Domain });
                 await expect(tx1).to.changeEtherBalances(
                     [addr1],
                     [-priceLevel1Domain]
                 );
 
-                const shares = await domainsContract.getControllerShares(owner, 'etn');
+                const shares = await domainsContract.getControllerShares(owner, true);
                 expect(shares).to.equal(priceLevel1Domain);
 
-                const tx2 = await domainsContract.connect(owner).withdraw('etn');
+                const tx2 = await domainsContract.connect(owner).withdraw(true);
                 await expect(tx2).to.changeEtherBalances(
                     [owner],
                     [priceLevel1Domain]
@@ -197,24 +206,24 @@ describe("DomainRegistry contract", function () {
             it("Should reward parent domain owner and contract owner when assign domain 2 level", async function () {
                 const { domainsContract, addr1, addr2, owner } = contractState;
 
-                await domainsContract.connect(addr1).registerDomain('com', 'etn', { value: priceLevel1Domain });
-                const tx = await domainsContract.connect(addr2).registerDomain('test.com', 'etn', { value: priceLevel2Domain });
+                await domainsContract.connect(addr1).registerDomain('com', true, { value: priceLevel1Domain });
+                const tx = await domainsContract.connect(addr2).registerDomain('test.com', true, { value: priceLevel2Domain });
                 await expect(tx).to.changeEtherBalances(
                     [addr2],
                     [-priceLevel2Domain]
                 );
 
                 const addr1Shares = priceLevel2Domain * BigInt(10) / BigInt(100);
-                const shares = await domainsContract.getControllerShares(addr1, 'etn');
+                const shares = await domainsContract.getControllerShares(addr1, true);
                 expect(shares).to.equal(addr1Shares);
 
-                const tx2 = await domainsContract.connect(addr1).withdraw('etn');
+                const tx2 = await domainsContract.connect(addr1).withdraw(true);
                 await expect(tx2).to.changeEtherBalances(
                     [addr1],
                     [addr1Shares]
                 );
 
-                const tx3 = await domainsContract.connect(owner).withdraw('etn');
+                const tx3 = await domainsContract.connect(owner).withdraw(true);
                 await expect(tx3).to.changeEtherBalances(
                     [owner],
                     [priceLevel1Domain + priceLevel2Domain - priceLevel2Domain * BigInt(10) / BigInt(100)]
@@ -224,11 +233,11 @@ describe("DomainRegistry contract", function () {
             it("Should collect etn for parent domain", async function () {
                 const { domainsContract, addr1, addr2, owner } = contractState;
 
-                await domainsContract.connect(addr1).registerDomain('com', 'etn', { value: priceLevel1Domain });
-                await domainsContract.connect(addr2).registerDomain('test.com', 'etn', { value: priceLevel2Domain });
-                await domainsContract.connect(owner).registerDomain('domain.com', 'etn', { value: priceLevel2Domain });
+                await domainsContract.connect(addr1).registerDomain('com', true, { value: priceLevel1Domain });
+                await domainsContract.connect(addr2).registerDomain('test.com', true, { value: priceLevel2Domain });
+                await domainsContract.connect(owner).registerDomain('domain.com', true, { value: priceLevel2Domain });
 
-                const tx = await domainsContract.connect(addr1).withdraw('etn');
+                const tx = await domainsContract.connect(addr1).withdraw(true);
                 await expect(tx).to.changeEtherBalances(
                     [addr1],
                     [
@@ -242,7 +251,7 @@ describe("DomainRegistry contract", function () {
                 const { domainsContract } = contractState;
 
                 await expect(domainsContract
-                    .withdraw('etn'))
+                    .withdraw(true))
                     .to.be.revertedWithCustomError(
                         domainsContract,
                         'WithdrawNoBalanceAvailable'
@@ -250,11 +259,82 @@ describe("DomainRegistry contract", function () {
             })
         });
 
+        describe('Domain registration in tokens', function () {
+            it("Should fail if not enough tokens for registering domain", async function () {
+                const { domainsContract, addr1 } = contractState;
+
+                await expect(domainsContract.connect(addr1).registerDomain('com', false))
+                    .to.be.revertedWithCustomError(
+                        domainsContract,
+                        'DomainRegistryNoSufficientTokens'
+                    );
+            });
+
+            it("Should take domain price in tokens when assign domain 1 level", async function () {
+                const {
+                    domainsContract,
+                    addr1,
+                    owner,
+                    mockTokenContract,
+                } = contractState;
+                const contractAddress = await domainsContract.getAddress();
+                const priceLevel1DomainTokens = await domainsContract.getDomainPrice('com', false);
+
+                await mockTokenContract.transfer(addr1, priceLevel1DomainTokens );
+                mockTokenContract.connect(addr1).approve(contractAddress, priceLevel1DomainTokens);
+
+                const tx1 = await domainsContract.connect(addr1).registerDomain('com', false );
+                await expect(tx1).to.changeTokenBalance(mockTokenContract, addr1, -priceLevel1DomainTokens);
+                expect(await domainsContract.getControllerShares(addr1, false)).to.equal(0);
+
+                const tx2 = await domainsContract.connect(owner).withdraw(false);
+                await expect(tx2).to.changeTokenBalance(mockTokenContract, owner, priceLevel1DomainTokens);
+            });
+
+            it("Should reward parent domain owner in tokens and contract owner when assign domain 2 level", async function () {
+                const {
+                    domainsContract,
+                    addr1,
+                    addr2,
+                    owner,
+                    mockTokenContract,
+                } = contractState;
+                const contractAddress = await domainsContract.getAddress();
+                const priceLevel1DomainTokens = await domainsContract.getDomainPrice('com', false);
+                const priceLevel2DomainTokens = await domainsContract.getDomainPrice('test.com', false);
+
+                await mockTokenContract.transfer(addr1, priceLevel1DomainTokens );
+                mockTokenContract.connect(addr1).approve(contractAddress, priceLevel1DomainTokens);
+
+                await mockTokenContract.transfer(addr2, priceLevel2DomainTokens );
+                await mockTokenContract.transfer(owner, priceLevel2DomainTokens );
+
+                mockTokenContract.connect(addr2).approve(contractAddress, priceLevel2DomainTokens);
+
+                await domainsContract.connect(addr1).registerDomain('com', false);
+                const tx = await domainsContract.connect(addr2).registerDomain('test.com', false);
+                await expect(tx).to.changeTokenBalance(mockTokenContract, addr2, -priceLevel2DomainTokens);
+
+                const addr1Tokens = priceLevel2DomainTokens * BigInt(10) / BigInt(100);
+                const shares = await domainsContract.getControllerShares(addr1, false);
+                expect(shares).to.equal(addr1Tokens);
+
+                const tx2 = await domainsContract.connect(addr1).withdraw(false);
+                await expect(tx2).to.changeTokenBalance(mockTokenContract, addr1, addr1Tokens);
+
+                const ownerShares = await domainsContract.getControllerShares(owner, false);
+                const ownerReward = priceLevel1DomainTokens +
+                    priceLevel2DomainTokens -
+                    priceLevel2DomainTokens * BigInt(10) / BigInt(100);
+                await expect(ownerReward).to.equal(ownerShares);
+            });
+        });
+
         describe('Domain releasing', function () {
             it("Should unregister domain without balance change", async function () {
                 const { domainsContract, addr1, owner } = contractState;
 
-                await domainsContract.connect(addr1).registerDomain('com', 'etn', { value:  priceLevel1Domain });
+                await domainsContract.connect(addr1).registerDomain('com', true, { value:  priceLevel1Domain });
                 const tx2 = await domainsContract.connect(addr1).unregisterDomain('com');
                 await expect(tx2).to.changeEtherBalances([addr1, owner], [0, 0]);
 
@@ -265,7 +345,7 @@ describe("DomainRegistry contract", function () {
             it("Should fail if unregistering by not domain owner", async function () {
                 const { domainsContract, addr1 } = contractState;
 
-                await domainsContract.registerDomain('com', 'etn', { value:  priceLevel1Domain });
+                await domainsContract.registerDomain('com', true, { value:  priceLevel1Domain });
 
                 await expect(domainsContract
                     .connect(addr1)

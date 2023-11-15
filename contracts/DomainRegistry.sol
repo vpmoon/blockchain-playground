@@ -11,6 +11,10 @@ import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/interfaces/
 /// @param domainName The domain name for which ETN is insufficient
 error DomainRegistryNoSufficientEtn(string domainName);
 
+/// Error for insufficient Tokens sent during domain registration
+/// @param domainName The domain name for which Tokens is insufficient
+error DomainRegistryNoSufficientTokens(string domainName);
+
 /// Error for non-existent parent domain during domain registration
 /// @param domainName The domain name with a missing parent domain
 error DomainRegistryParentDomainNotExists(string domainName);
@@ -37,7 +41,26 @@ error DomainRegistryDomainIsNotRegistered(string domainName);
 
 /// @notice Error when payment not sent
 /// @param controller The controller address of caller
-error DomainRegistryPaymentReverted(address controller);
+error DomainRegistryPaymentEtnReverted(address controller);
+
+/// @notice Error when payment not sent
+/// @param controller The controller address of caller
+error DomainRegistryPaymentTokensReverted(address controller);
+
+/// @notice Error when payment not sent with reason
+/// @param controller The controller address of caller
+/// @param reason The reason string
+error DomainRegistryPaymentTokensRevertedWithReason(address controller, string reason);
+
+/// @notice Error when payment not sent with unknown
+/// @param controller The controller address of caller
+error DomainRegistryPaymentTokensRevertedUnknown(address controller);
+
+/// @notice Error when tokens allowance is insufficient
+/// @param from The address of sender
+/// @param to The address of recipient
+/// @param amount amount
+error DomainRegistryInsufficientAllowanceTokens(address from, address to, uint256 amount);
 
 /// @author Vika Petrenko
 /// @title Contract for domain registration (Version 1)
@@ -59,14 +82,14 @@ contract DomainRegistry is OwnableUpgradeable {
 
     uint256 public constant REWARD_PERCENT_OWNER = 10;
     IERC20 public token;
-    AggregatorV3Interface internal priceFeed;
+    AggregatorV3Interface internal _priceFeed;
 
     /// @notice Reinitializes the contract and sets domain level prices
-    function initialize() initializer public {
+    function initialize(address _priceFeedAddress, address _tokenAddress) initializer public {
         __Ownable_init(msg.sender);
 
-        token = IERC20(msg.sender);
-        priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+        _priceFeed = AggregatorV3Interface(_priceFeedAddress);
+        token = IERC20(_tokenAddress);
 
         setDomainLevelPrice(1, 0.000000005 ether);
         setDomainLevelPrice(2, 0.000000004 ether);
@@ -78,14 +101,14 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @notice Retrieves the price for registering a domain
     /// @param domainName The domain name to check the price for
     /// @return The price in ether for registering the domain
-    function getDomainPrice(string memory domainName, string memory currency) public view returns (uint256) {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
+    function getDomainPrice(string memory domainName, bool isEtn) public view returns (uint256) {
         uint256 level = DomainParserLibrary.getDomainLevel(domainName);
         if (isEtn) {
             return domainLevelPrices[level];
         } else {
-            (, int256 price, , , ) = priceFeed.latestRoundData();
-            return (domainLevelPrices[level]) * (uint256(price));
+            (, int256 price, , , ) = _priceFeed.latestRoundData();
+            uint8 decimals = _priceFeed.decimals();
+            return (domainLevelPrices[level] * (10 ** decimals)) / uint256(price);
         }
     }
 
@@ -99,11 +122,16 @@ contract DomainRegistry is OwnableUpgradeable {
 
     /// @notice Modifier to check if the sender sent sufficient ETN (Ether) to register a domain
     /// @param domainName The domain name to check ETN for
-    modifier checkSufficientEtn(string memory domainName) {
-        uint256 price = getDomainPrice(domainName, 'etn');
-
-        if (msg.value != price) {
-            revert DomainRegistryNoSufficientEtn({ domainName: domainName });
+    modifier checkSufficientEtn(string memory domainName, bool isEtn) {
+        uint256 price = getDomainPrice(domainName, isEtn);
+        if (isEtn) {
+            if (msg.value != price) {
+                revert DomainRegistryNoSufficientEtn({ domainName: domainName });
+            }
+        } else {
+            if (token.balanceOf(msg.sender) < price) {
+                revert DomainRegistryNoSufficientTokens({ domainName: domainName });
+            }
         }
         _;
     }
@@ -164,8 +192,7 @@ contract DomainRegistry is OwnableUpgradeable {
 
     /// @notice Retrieves the domain controller shares
     /// @return The controller's address who control domain
-    function getControllerShares(address controller, string memory currency) public view returns (uint256) {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
+    function getControllerShares(address controller, bool isEtn) public view returns (uint256) {
         if (isEtn) {
             return _shares[controller];
         } else {
@@ -176,14 +203,14 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @notice Validates domain registration by checking availability, parent existence, and ETN sent
     /// @param domainName The domain name to validate registration for
     function validateDomainRegistration(
-        string memory domainName
-    ) internal checkDomainParent(domainName) checkDomainAvailability(domainName) checkSufficientEtn(domainName) {
+        string memory domainName,
+        bool isEtn
+    ) internal checkDomainParent(domainName) checkDomainAvailability(domainName) checkSufficientEtn(domainName, isEtn) {
         return;
     }
 
     /// @notice Allows an owner to withdraw their accumulated rewards
-    function withdraw(string memory currency) external {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
+    function withdraw(bool isEtn) external {
         if (isEtn) {
             uint256 share = _shares[msg.sender];
             if (share == 0) {
@@ -192,7 +219,7 @@ contract DomainRegistry is OwnableUpgradeable {
             _shares[msg.sender] = 0;
             (bool success, ) = msg.sender.call{value: share}("");
             if (!success) {
-                revert DomainRegistryPaymentReverted({ controller: msg.sender });
+                revert DomainRegistryPaymentEtnReverted({ controller: msg.sender });
             }
         } else {
             uint256 share = _tokens[msg.sender];
@@ -200,20 +227,26 @@ contract DomainRegistry is OwnableUpgradeable {
                 revert WithdrawNoBalanceAvailable();
             }
             _tokens[msg.sender] = 0;
-            token.transfer(msg.sender, share);
-            //TODO check success or throws
+            try IERC20(token).transfer(msg.sender, share) returns (bool success) {
+                if (!success) {
+                    revert DomainRegistryPaymentTokensReverted(msg.sender);
+                }
+            } catch Error(string memory revertReason) {
+                revert DomainRegistryPaymentTokensRevertedWithReason(msg.sender, revertReason);
+            } catch {
+                revert DomainRegistryPaymentTokensRevertedUnknown(msg.sender);
+            }
         }
     }
 
     /// @notice Registers a domain, store balance into shares so can be withdrown later
     /// @param domainName The domain name to register
-    function registerDomain(string memory domainName, string memory currency) external payable checkDomainLength(domainName) {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
+    function registerDomain(string memory domainName, bool isEtn) external payable checkDomainLength(domainName) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        validateDomainRegistration(rootDomain);
+        validateDomainRegistration(rootDomain, isEtn);
         string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
         address parentDomainOwner = _domains[parentDomain];
-        uint256 price = getDomainPrice(rootDomain, currency);
+        uint256 price = getDomainPrice(rootDomain, isEtn);
 
         // parent domain reward
         uint256 parentReward;
@@ -221,11 +254,13 @@ contract DomainRegistry is OwnableUpgradeable {
             parentReward = 0;
         } else {
             parentReward = (price * REWARD_PERCENT_OWNER) / 100;
-        }
-        if (isEtn) {
-            _shares[parentDomainOwner] += parentReward;
-        } else {
-            _tokens[parentDomainOwner] += parentReward;
+
+            if (isEtn) {
+                _shares[parentDomainOwner] += parentReward;
+            } else {
+                _tokens[parentDomainOwner] += parentReward;
+                IERC20(token).transferFrom(msg.sender, address(parentDomainOwner), parentReward);
+            }
         }
 
         // contract owner
@@ -234,6 +269,11 @@ contract DomainRegistry is OwnableUpgradeable {
             _shares[owner()] += ownerReward;
         } else {
             _tokens[owner()] += ownerReward;
+            uint256 allowance = IERC20(token).allowance(_msgSender(), address(this));
+            if (allowance < ownerReward) {
+                revert DomainRegistryInsufficientAllowanceTokens({ from: msg.sender, to: address(this), amount: allowance });
+            }
+            IERC20(token).transferFrom(msg.sender, address(this), ownerReward);
         }
 
         _domains[rootDomain] = msg.sender;
