@@ -102,7 +102,7 @@ contract DomainRegistry is OwnableUpgradeable {
         } else {
             (, int256 price, , , ) = _priceFeed.latestRoundData();
             uint8 decimals = _priceFeed.decimals();
-            return (domainLevelPrices[level]) * (uint256(price)) / ( 10 ** decimals);
+            return (domainLevelPrices[level] * (10 ** decimals)) / uint256(price);
         }
     }
 
@@ -190,7 +190,7 @@ contract DomainRegistry is OwnableUpgradeable {
         if (isEtn) {
             return _shares[controller];
         } else {
-            return _tokens[controller];
+            return token.balanceOf(controller);
         }
     }
 
@@ -248,12 +248,13 @@ contract DomainRegistry is OwnableUpgradeable {
             parentReward = 0;
         } else {
             parentReward = (price * REWARD_PERCENT_OWNER) / 100;
-        }
-        if (isEtn) {
-            _shares[parentDomainOwner] += parentReward;
-        } else {
-            _tokens[parentDomainOwner] += parentReward;
-            IERC20(token).transferFrom(msg.sender, address(parentDomainOwner) , parentReward);
+
+            if (isEtn) {
+                _shares[parentDomainOwner] += parentReward;
+            } else {
+                _tokens[parentDomainOwner] += parentReward;
+                IERC20(token).transferFrom(msg.sender, address(parentDomainOwner), parentReward);
+            }
         }
 
         // contract owner
@@ -262,7 +263,11 @@ contract DomainRegistry is OwnableUpgradeable {
             _shares[owner()] += ownerReward;
         } else {
             _tokens[owner()] += ownerReward;
-            IERC20(token).transferFrom(msg.sender, address(owner()) , ownerReward);
+//            uint256 allowance = IERC20(token).allowance(_msgSender(), address(this));
+//            require(allowance >= ownerReward, "Insufficient allowance");
+
+//            IERC20(token).transferFrom(address(msg.sender), address(owner()) , ownerReward);
+            assert(IERC20(token).transferFrom(_msgSender(), address(this) , ownerReward));
         }
 
         _domains[rootDomain] = msg.sender;

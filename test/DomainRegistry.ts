@@ -32,7 +32,7 @@ describe("DomainRegistry contract", function () {
         const domainParserLibrary = await domainParserLibraryFactory.deploy();
 
         const mockTokenFactory = await ethers.getContractFactory("contracts/MockToken.sol:MockToken");
-        const mockTokenContract = await mockTokenFactory.deploy(20000);
+        const mockTokenContract = await mockTokenFactory.deploy(BigInt(4 * (10 ** 18)));
         const mockTokenContractAddress = await mockTokenContract.getAddress();
 
         const mockPriceFeedFactory = await ethers.getContractFactory("contracts/MockPriceFeed.sol:MockPriceFeed");
@@ -270,6 +270,26 @@ describe("DomainRegistry contract", function () {
                     );
             });
 
+            it("Should take domain price in tokens when assign domain 1 level", async function () {
+                const {
+                    domainsContract,
+                    addr1,
+                    owner,
+                    mockTokenContract,
+                } = contractState;
+                const contractAddress = await domainsContract.getAddress();
+                const priceLevel1DomainTokens = await domainsContract.getDomainPrice('com', false);
+
+                await mockTokenContract.transfer(addr1, priceLevel1DomainTokens );
+                await expect(mockTokenContract.connect(addr1).approve(contractAddress, priceLevel1DomainTokens)).not.to.reverted;
+
+                const tx1 = await domainsContract.connect(addr1).registerDomain('com', false );
+                await expect(tx1).to.changeTokenBalance(mockTokenContract, addr1, -priceLevel1DomainTokens);
+                expect(await domainsContract.getControllerShares(addr1, false)).to.equal(0);
+
+                const tx2 = await domainsContract.connect(owner).withdraw(false);
+                await expect(tx2).to.changeTokenBalance(mockTokenContract, owner, priceLevel1DomainTokens);
+            });
         });
 
         describe('Domain releasing', function () {
