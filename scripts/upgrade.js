@@ -1,6 +1,7 @@
 const assert = require("assert");
 const path = require('path');
 const fs = require('fs');
+const {ethers} = require("hardhat");
 
 const address = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
 
@@ -24,9 +25,16 @@ const address = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
             DomainParserLibrary: domainParserLibrary,
         }
     });
+    const domainTokenFactory = await ethers.getContractFactory("contracts/DomainToken.sol:DomainToken");
+    const domainTokenContract = await domainTokenFactory.deploy('DomainToken', 'USDT', BigInt(4 * (10 ** 40)), );
+
     const domainsContractV2 = await upgrades.upgradeProxy(oldContract, domainRegistryV2, {
         call: {
-            fn: "reinitialize"
+            fn: "reinitialize",
+            args: [
+                '0x694AA1769357215DE4FAC081bf1f309aDC325306',
+                await domainTokenContract.getAddress(),
+            ]
         },
         unsafeAllowLinkedLibraries: true,
     });

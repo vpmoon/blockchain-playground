@@ -5,13 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DomainToken is ERC20, Ownable {
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 initialSupply,
-        address initialOwner
-    ) ERC20(name, symbol) Ownable(initialOwner) {
-        _mint(initialOwner, initialSupply);
+    constructor(string memory name, string memory symbol, uint256 initialSupply)
+        ERC20(name, symbol)
+        Ownable(_msgSender())
+    {
+        _mint(_msgSender(), initialSupply);
     }
 
     function mint(address to, uint256 amount) external onlyOwner {

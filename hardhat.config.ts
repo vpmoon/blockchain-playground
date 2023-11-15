@@ -7,7 +7,7 @@ const config: HardhatUserConfig = {
   solidity: "0.8.20",
   networks: {
     sepolia: {
-      url: process.env.INFURA_API_KEY,
+      url: process.env.RPC_URL,
       accounts: [process.env.SEPOLIA_PRIVATE_KEY]
     },
     goerli: {

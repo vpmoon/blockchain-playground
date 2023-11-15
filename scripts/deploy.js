@@ -1,9 +1,7 @@
 const { ethers } = require("hardhat");
+const {address} = require("hardhat/internal/core/config/config-validation");
 
 async function main() {
-    const domainTokenFactory = await ethers.getContractFactory("contracts/DomainToken.sol:DomainToken");
-    const domainTokenContract = await domainTokenFactory.deploy(20000);
-
     const stringParserLibrary = await ethers.getContractFactory("contracts/StringParserLibrary.sol:StringParserLibrary");
     const stringParserLibraryDeployed = await stringParserLibrary.deploy();
 
@@ -19,13 +17,16 @@ async function main() {
             DomainParserLibrary: domainParserLibraryContract,
         },
     });
-    const proxyContract = await upgrades.deployProxy(domainRegistry, {
+
+    const domainTokenFactory = await ethers.getContractFactory("contracts/DomainToken.sol:DomainToken");
+    const domainTokenContract = await domainTokenFactory.deploy('DomainToken', 'USDT', BigInt(4 * (10 ** 40)), );
+
+    const proxyContract = await upgrades.deployProxy(domainRegistry, [
+        '0x694AA1769357215DE4FAC081bf1f309aDC325306',
+        await domainTokenContract.getAddress(),
+    ], {
         initializer: "initialize",
         unsafeAllowLinkedLibraries: true,
-        args: [
-            await domainTokenContract.getAddress(),
-            0x694AA1769357215DE4FAC081bf1f309aDC325306,
-        ],
     });
     console.log("DomainRegistryV1 deployed to:", await proxyContract.getAddress());
 }
