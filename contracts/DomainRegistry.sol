@@ -83,9 +83,8 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @param domainName The domain name to check the price for
     /// @return The price in ether for registering the domain
     function getDomainPrice(string memory domainName, string memory currency) public view returns (uint256) {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
         uint256 level = DomainParserLibrary.getDomainLevel(domainName);
-        if (isEtn) {
+        if (isEtnCurrency(currency)) {
             return domainLevelPrices[level];
         } else {
             (, int256 price, , , ) = _priceFeed.latestRoundData();
@@ -169,15 +168,14 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @notice Check if it's etn
     /// @param currency Currency value
     /// @return true if etn or false if others
-    function isEtnCurrency(string memory currency) public view returns (bool) {
+    function isEtnCurrency(string memory currency) public pure returns (bool) {
         return keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
     }
 
     /// @notice Retrieves the domain controller shares
     /// @return The controller's address who control domain
     function getControllerShares(address controller, string memory currency) public view returns (uint256) {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
-        if (isEtn) {
+        if (isEtnCurrency(currency)) {
             return _shares[controller];
         } else {
             return _tokens[controller];
@@ -194,8 +192,7 @@ contract DomainRegistry is OwnableUpgradeable {
 
     /// @notice Allows an owner to withdraw their accumulated rewards
     function withdraw(string memory currency) external {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
-        if (isEtn) {
+        if (isEtnCurrency(currency)) {
             uint256 share = _shares[msg.sender];
             if (share == 0) {
                 revert WithdrawNoBalanceAvailable();
@@ -221,7 +218,7 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @notice Registers a domain, store balance into shares so can be withdrown later
     /// @param domainName The domain name to register
     function registerDomain(string memory domainName, string memory currency) external payable checkDomainLength(domainName) {
-        bool isEtn = keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
+        bool isEtn = isEtnCurrency(currency);
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
         validateDomainRegistration(rootDomain);
         string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
