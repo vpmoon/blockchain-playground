@@ -30,13 +30,21 @@ describe("DomainRegistry contract", function () {
         });
         const domainParserLibrary = await domainParserLibraryFactory.deploy();
 
+        const mockTokenFactory = await ethers.getContractFactory("contracts/MockToken.sol:MockToken");
+        const mockTokenContract = await mockTokenFactory.deploy(20000);
+        const mockTokenContractAddress = await mockTokenContract.getAddress();
+
+        const mockPriceFeedFactory = await ethers.getContractFactory("contracts/MockPriceFeed.sol:MockPriceFeed");
+        const mockPriceFeedContract = await mockPriceFeedFactory.deploy(2000, 18);
+        const mockPriceFeedContractAddress = await mockPriceFeedContract.getAddress();
+
         const domainRegistry = await ethers.getContractFactory("DomainRegistry", {
             libraries: {
                 DomainParserLibrary: domainParserLibrary,
             }
         });
         const domainsContract = await domainRegistry.deploy();
-        await domainsContract.initialize();
+        await domainsContract.initialize(mockTokenContractAddress, mockPriceFeedContractAddress);
 
         return { domainsContract, owner, addr1, addr2 };
     }

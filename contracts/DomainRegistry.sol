@@ -37,7 +37,11 @@ error DomainRegistryDomainIsNotRegistered(string domainName);
 
 /// @notice Error when payment not sent
 /// @param controller The controller address of caller
-error DomainRegistryPaymentReverted(address controller);
+error DomainRegistryPaymentEtnReverted(address controller);
+
+/// @notice Error when payment not sent
+/// @param controller The controller address of caller
+error DomainRegistryPaymentTokensReverted(address controller);
 
 /// @author Vika Petrenko
 /// @title Contract for domain registration (Version 1)
@@ -58,15 +62,15 @@ contract DomainRegistry is OwnableUpgradeable {
     event DomainReleased(address indexed controller, string domainName);
 
     uint256 public constant REWARD_PERCENT_OWNER = 10;
-    IERC20 public token;
-    AggregatorV3Interface internal priceFeed;
+    IERC20 public tokenAddress;
+    AggregatorV3Interface internal _priceFeed;
 
     /// @notice Reinitializes the contract and sets domain level prices
-    function initialize() initializer public {
+    function initialize(address _priceFeedAddress, address _tokenAddress) initializer public {
         __Ownable_init(msg.sender);
 
-        token = IERC20(msg.sender);
-        priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+        _priceFeed = AggregatorV3Interface(_priceFeedAddress);
+        tokenAddress = IERC20(_tokenAddress);
 
         setDomainLevelPrice(1, 0.000000005 ether);
         setDomainLevelPrice(2, 0.000000004 ether);
@@ -84,7 +88,7 @@ contract DomainRegistry is OwnableUpgradeable {
         if (isEtn) {
             return domainLevelPrices[level];
         } else {
-            (, int256 price, , , ) = priceFeed.latestRoundData();
+            (, int256 price, , , ) = _priceFeed.latestRoundData();
             return (domainLevelPrices[level]) * (uint256(price));
         }
     }
@@ -162,6 +166,13 @@ contract DomainRegistry is OwnableUpgradeable {
         return _domains[rootDomain];
     }
 
+    /// @notice Check if it's etn
+    /// @param currency Currency value
+    /// @return true if etn or false if others
+    function isEtnCurrency(string memory currency) public view returns (bool) {
+        return keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
+    }
+
     /// @notice Retrieves the domain controller shares
     /// @return The controller's address who control domain
     function getControllerShares(address controller, string memory currency) public view returns (uint256) {
@@ -192,7 +203,7 @@ contract DomainRegistry is OwnableUpgradeable {
             _shares[msg.sender] = 0;
             (bool success, ) = msg.sender.call{value: share}("");
             if (!success) {
-                revert DomainRegistryPaymentReverted({ controller: msg.sender });
+                revert DomainRegistryPaymentEtnReverted({ controller: msg.sender });
             }
         } else {
             uint256 share = _tokens[msg.sender];
@@ -200,8 +211,10 @@ contract DomainRegistry is OwnableUpgradeable {
                 revert WithdrawNoBalanceAvailable();
             }
             _tokens[msg.sender] = 0;
-            token.transfer(msg.sender, share);
-            //TODO check success or throws
+            bool success = IERC20(tokenAddress).transfer(msg.sender, share);
+            if (!success) {
+                revert DomainRegistryPaymentTokensReverted({ controller: msg.sender });
+            }
         }
     }
 
