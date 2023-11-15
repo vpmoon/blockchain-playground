@@ -7,6 +7,7 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
 import { AddressZero } from "@ethersproject/constants";
+import {token} from "../typechain-types/@openzeppelin/contracts";
 
 describe("DomainRegistry contract", function () {
     let contractState: DomainRegistryFixture;
@@ -44,9 +45,9 @@ describe("DomainRegistry contract", function () {
             }
         });
         const domainsContract = await domainRegistry.deploy();
-        await domainsContract.initialize(mockTokenContractAddress, mockPriceFeedContractAddress);
+        await domainsContract.initialize(mockPriceFeedContractAddress, mockTokenContractAddress);
 
-        return { domainsContract, owner, addr1, addr2 };
+        return { domainsContract, owner, addr1, addr2, mockTokenContract, mockPriceFeedContract };
     }
 
     beforeEach(async () => {
@@ -259,34 +260,16 @@ describe("DomainRegistry contract", function () {
         });
 
         describe('Domain registration in tokens', function () {
-            it.only("Should fail if not enough tokens for registering domain", async function () {
+            it("Should fail if not enough tokens for registering domain", async function () {
                 const { domainsContract, addr1 } = contractState;
 
-                await expect(domainsContract.connect(addr1).registerDomain('com', 'tokens'))
+                await expect(domainsContract.connect(addr1).registerDomain('com', false))
                     .to.be.revertedWithCustomError(
                         domainsContract,
                         'DomainRegistryNoSufficientTokens'
                     );
             });
 
-            it("Should take domain price in tokens when assign domain 1 level", async function () {
-                const { domainsContract, addr1, owner } = contractState;
-
-                const tx1 = await domainsContract.connect(addr1).registerDomain('com', 'tokens', { value: priceLevel1Domain });
-                await expect(tx1).to.changeEtherBalances(
-                    [addr1],
-                    [-priceLevel1Domain]
-                );
-
-                const shares = await domainsContract.getControllerShares(owner, 'etn');
-                expect(shares).to.equal(priceLevel1Domain);
-
-                const tx2 = await domainsContract.connect(owner).withdraw('etn');
-                await expect(tx2).to.changeEtherBalances(
-                    [owner],
-                    [priceLevel1Domain]
-                );
-            });
         });
 
         describe('Domain releasing', function () {

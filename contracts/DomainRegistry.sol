@@ -102,7 +102,7 @@ contract DomainRegistry is OwnableUpgradeable {
         } else {
             (, int256 price, , , ) = _priceFeed.latestRoundData();
             uint8 decimals = _priceFeed.decimals();
-            return (domainLevelPrices[level] * ( 10 ** decimals)) * (uint256(price));
+            return (domainLevelPrices[level]) * (uint256(price)) / ( 10 ** decimals);
         }
     }
 
