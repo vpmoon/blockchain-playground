@@ -43,6 +43,15 @@ error DomainRegistryPaymentEtnReverted(address controller);
 /// @param controller The controller address of caller
 error DomainRegistryPaymentTokensReverted(address controller);
 
+/// @notice Error when payment not sent with reason
+/// @param controller The controller address of caller
+/// @param reason The reason string
+error DomainRegistryPaymentTokensRevertedWithReason(address controller, string reason);
+
+/// @notice Error when payment not sent with unknown
+/// @param controller The controller address of caller
+error DomainRegistryPaymentTokensRevertedUnknown(address controller);
+
 /// @author Vika Petrenko
 /// @title Contract for domain registration (Version 1)
 contract DomainRegistry is OwnableUpgradeable {
@@ -88,7 +97,8 @@ contract DomainRegistry is OwnableUpgradeable {
             return domainLevelPrices[level];
         } else {
             (, int256 price, , , ) = _priceFeed.latestRoundData();
-            return (domainLevelPrices[level]) * (uint256(price));
+            uint8 decimals = _priceFeed.decimals();
+            return (domainLevelPrices[level] * ( 10 ** decimals)) * (uint256(price));
         }
     }
 
@@ -204,9 +214,14 @@ contract DomainRegistry is OwnableUpgradeable {
                 revert WithdrawNoBalanceAvailable();
             }
             _tokens[msg.sender] = 0;
-            bool success = IERC20(tokenAddress).transfer(msg.sender, share);
-            if (!success) {
-                revert DomainRegistryPaymentTokensReverted({ controller: msg.sender });
+            try IERC20(tokenAddress).transfer(msg.sender, share) returns (bool success) {
+                if (!success) {
+                    revert DomainRegistryPaymentTokensReverted(msg.sender);
+                }
+            } catch Error(string memory revertReason) {
+                revert DomainRegistryPaymentTokensRevertedWithReason(msg.sender, revertReason);
+            } catch {
+                revert DomainRegistryPaymentTokensRevertedUnknown(msg.sender);
             }
         }
     }

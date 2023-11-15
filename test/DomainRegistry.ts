@@ -35,7 +35,7 @@ describe("DomainRegistry contract", function () {
         const mockTokenContractAddress = await mockTokenContract.getAddress();
 
         const mockPriceFeedFactory = await ethers.getContractFactory("contracts/MockPriceFeed.sol:MockPriceFeed");
-        const mockPriceFeedContract = await mockPriceFeedFactory.deploy(2000, 18);
+        const mockPriceFeedContract = await mockPriceFeedFactory.deploy(BigInt(2000 * (10 ** 18)), 18);
         const mockPriceFeedContractAddress = await mockPriceFeedContract.getAddress();
 
         const domainRegistry = await ethers.getContractFactory("DomainRegistry", {
@@ -104,7 +104,7 @@ describe("DomainRegistry contract", function () {
             });
         });
 
-        describe('Domain registration', function () {
+        describe('Domain registration in ETH', function () {
             it("Should register domain and emit event", async function () {
                 const { domainsContract, addr1 } = contractState;
 
