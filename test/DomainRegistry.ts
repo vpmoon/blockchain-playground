@@ -281,7 +281,7 @@ describe("DomainRegistry contract", function () {
                 const priceLevel1DomainTokens = await domainsContract.getDomainPrice('com', false);
 
                 await mockTokenContract.transfer(addr1, priceLevel1DomainTokens );
-                await expect(mockTokenContract.connect(addr1).approve(contractAddress, priceLevel1DomainTokens)).not.to.reverted;
+                mockTokenContract.connect(addr1).approve(contractAddress, priceLevel1DomainTokens);
 
                 const tx1 = await domainsContract.connect(addr1).registerDomain('com', false );
                 await expect(tx1).to.changeTokenBalance(mockTokenContract, addr1, -priceLevel1DomainTokens);
@@ -289,6 +289,44 @@ describe("DomainRegistry contract", function () {
 
                 const tx2 = await domainsContract.connect(owner).withdraw(false);
                 await expect(tx2).to.changeTokenBalance(mockTokenContract, owner, priceLevel1DomainTokens);
+            });
+
+            it("Should reward parent domain owner in tokens and contract owner when assign domain 2 level", async function () {
+                const {
+                    domainsContract,
+                    addr1,
+                    addr2,
+                    owner,
+                    mockTokenContract,
+                } = contractState;
+                const contractAddress = await domainsContract.getAddress();
+                const priceLevel1DomainTokens = await domainsContract.getDomainPrice('com', false);
+                const priceLevel2DomainTokens = await domainsContract.getDomainPrice('test.com', false);
+
+                await mockTokenContract.transfer(addr1, priceLevel1DomainTokens );
+                mockTokenContract.connect(addr1).approve(contractAddress, priceLevel1DomainTokens);
+
+                await mockTokenContract.transfer(addr2, priceLevel2DomainTokens );
+                await mockTokenContract.transfer(owner, priceLevel2DomainTokens );
+
+                mockTokenContract.connect(addr2).approve(contractAddress, priceLevel2DomainTokens);
+
+                await domainsContract.connect(addr1).registerDomain('com', false);
+                const tx = await domainsContract.connect(addr2).registerDomain('test.com', false);
+                await expect(tx).to.changeTokenBalance(mockTokenContract, addr2, -priceLevel2DomainTokens);
+
+                const addr1Tokens = priceLevel2DomainTokens * BigInt(10) / BigInt(100);
+                const shares = await domainsContract.getControllerShares(addr1, false);
+                expect(shares).to.equal(addr1Tokens);
+
+                const tx2 = await domainsContract.connect(addr1).withdraw(false);
+                await expect(tx2).to.changeTokenBalance(mockTokenContract, addr1, addr1Tokens);
+
+                const ownerShares = await domainsContract.getControllerShares(owner, false);
+                const ownerReward = priceLevel1DomainTokens +
+                    priceLevel2DomainTokens -
+                    priceLevel2DomainTokens * BigInt(10) / BigInt(100);
+                await expect(ownerReward).to.equal(ownerShares);
             });
         });
 
