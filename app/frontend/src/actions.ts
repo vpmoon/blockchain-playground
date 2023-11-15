@@ -31,8 +31,10 @@ export const getContract = () => {
     );
 }
 
+const isEtn = (currency: string) => currency === 'etn';
+
 export const getDomainPrice = async (contract, domain, currency) => {
-    return contract.getDomainPrice(domain, currency);
+    return contract.getDomainPrice(domain, isEtn(currency));
 }
 
 export const getDomainAddress = async (contract, domain) => {
@@ -40,11 +42,11 @@ export const getDomainAddress = async (contract, domain) => {
 }
 
 export const getControllerShares = async (contract, address, currency) => {
-    return contract.getControllerShares(address, currency);
+    return contract.getControllerShares(address, isEtn(currency));
 }
 
 export const registerDomain = async (contract, domain, price, currency) => {
-    return contract.registerDomain(domain, currency, { value: price })
+    return contract.registerDomain(domain, isEtn(currency), { value: price })
 }
 
 export const releaseDomain = async (contract, domain) => {
@@ -52,15 +54,13 @@ export const releaseDomain = async (contract, domain) => {
 }
 
 export const withdraw = async (contract, currency) => {
-    return contract.withdraw(currency)
+    return contract.withdraw(isEtn(currency))
 }
 
 export const getEventsList = async () => {
     const account = await getAccount();
 
-    const items = JSON.parse(localStorage.getItem(account)) || [];
-
-    return items;
+    return JSON.parse(localStorage.getItem(account)) || [];
 }
 
 export const subscribe = async () => {
