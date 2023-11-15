@@ -56,6 +56,12 @@ error DomainRegistryPaymentTokensRevertedWithReason(address controller, string r
 /// @param controller The controller address of caller
 error DomainRegistryPaymentTokensRevertedUnknown(address controller);
 
+/// @notice Error when tokens allowance is insufficient
+/// @param from The address of sender
+/// @param to The address of recipient
+/// @param amount amount
+error DomainRegistryInsufficientAllowanceTokens(address from, address to, uint256 amount);
+
 /// @author Vika Petrenko
 /// @title Contract for domain registration (Version 1)
 contract DomainRegistry is OwnableUpgradeable {
@@ -263,11 +269,11 @@ contract DomainRegistry is OwnableUpgradeable {
             _shares[owner()] += ownerReward;
         } else {
             _tokens[owner()] += ownerReward;
-//            uint256 allowance = IERC20(token).allowance(_msgSender(), address(this));
-//            require(allowance >= ownerReward, "Insufficient allowance");
-
-//            IERC20(token).transferFrom(address(msg.sender), address(owner()) , ownerReward);
-            assert(IERC20(token).transferFrom(_msgSender(), address(this) , ownerReward));
+            uint256 allowance = IERC20(token).allowance(_msgSender(), address(this));
+            if (allowance < ownerReward) {
+                revert DomainRegistryInsufficientAllowanceTokens({ from: msg.sender, to: address(this), amount: allowance });
+            }
+            IERC20(token).transferFrom(msg.sender, address(this), ownerReward);
         }
 
         _domains[rootDomain] = msg.sender;

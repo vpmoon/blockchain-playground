@@ -32,7 +32,7 @@ describe("DomainRegistry contract", function () {
         const domainParserLibrary = await domainParserLibraryFactory.deploy();
 
         const mockTokenFactory = await ethers.getContractFactory("contracts/MockToken.sol:MockToken");
-        const mockTokenContract = await mockTokenFactory.deploy(BigInt(4 * (10 ** 18)));
+        const mockTokenContract = await mockTokenFactory.connect(owner).deploy(BigInt(4 * (10 ** 40)));
         const mockTokenContractAddress = await mockTokenContract.getAddress();
 
         const mockPriceFeedFactory = await ethers.getContractFactory("contracts/MockPriceFeed.sol:MockPriceFeed");
