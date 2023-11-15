@@ -82,9 +82,9 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @notice Retrieves the price for registering a domain
     /// @param domainName The domain name to check the price for
     /// @return The price in ether for registering the domain
-    function getDomainPrice(string memory domainName, string memory currency) public view returns (uint256) {
+    function getDomainPrice(string memory domainName, bool isEtn) public view returns (uint256) {
         uint256 level = DomainParserLibrary.getDomainLevel(domainName);
-        if (isEtnCurrency(currency)) {
+        if (isEtn) {
             return domainLevelPrices[level];
         } else {
             (, int256 price, , , ) = _priceFeed.latestRoundData();
@@ -102,11 +102,13 @@ contract DomainRegistry is OwnableUpgradeable {
 
     /// @notice Modifier to check if the sender sent sufficient ETN (Ether) to register a domain
     /// @param domainName The domain name to check ETN for
-    modifier checkSufficientEtn(string memory domainName) {
-        uint256 price = getDomainPrice(domainName, 'etn');
+    modifier checkSufficientEtn(string memory domainName, bool isEtn) {
+        if (isEtn) {
+            uint256 price = getDomainPrice(domainName, isEtn);
 
-        if (msg.value != price) {
-            revert DomainRegistryNoSufficientEtn({ domainName: domainName });
+            if (msg.value != price) {
+                revert DomainRegistryNoSufficientEtn({ domainName: domainName });
+            }
         }
         _;
     }
@@ -165,17 +167,10 @@ contract DomainRegistry is OwnableUpgradeable {
         return _domains[rootDomain];
     }
 
-    /// @notice Check if it's etn
-    /// @param currency Currency value
-    /// @return true if etn or false if others
-    function isEtnCurrency(string memory currency) public pure returns (bool) {
-        return keccak256(abi.encodePacked(currency)) == keccak256(abi.encodePacked('etn'));
-    }
-
     /// @notice Retrieves the domain controller shares
     /// @return The controller's address who control domain
-    function getControllerShares(address controller, string memory currency) public view returns (uint256) {
-        if (isEtnCurrency(currency)) {
+    function getControllerShares(address controller, bool isEtn) public view returns (uint256) {
+        if (isEtn) {
             return _shares[controller];
         } else {
             return _tokens[controller];
@@ -185,14 +180,15 @@ contract DomainRegistry is OwnableUpgradeable {
     /// @notice Validates domain registration by checking availability, parent existence, and ETN sent
     /// @param domainName The domain name to validate registration for
     function validateDomainRegistration(
-        string memory domainName
-    ) internal checkDomainParent(domainName) checkDomainAvailability(domainName) checkSufficientEtn(domainName) {
+        string memory domainName,
+        bool isEtn
+    ) internal checkDomainParent(domainName) checkDomainAvailability(domainName) checkSufficientEtn(domainName, isEtn) {
         return;
     }
 
     /// @notice Allows an owner to withdraw their accumulated rewards
-    function withdraw(string memory currency) external {
-        if (isEtnCurrency(currency)) {
+    function withdraw(bool isEtn) external {
+        if (isEtn) {
             uint256 share = _shares[msg.sender];
             if (share == 0) {
                 revert WithdrawNoBalanceAvailable();
@@ -217,13 +213,12 @@ contract DomainRegistry is OwnableUpgradeable {
 
     /// @notice Registers a domain, store balance into shares so can be withdrown later
     /// @param domainName The domain name to register
-    function registerDomain(string memory domainName, string memory currency) external payable checkDomainLength(domainName) {
-        bool isEtn = isEtnCurrency(currency);
+    function registerDomain(string memory domainName, bool isEtn) external payable checkDomainLength(domainName) {
         string memory rootDomain = DomainParserLibrary.getRootDomain(domainName);
-        validateDomainRegistration(rootDomain);
+        validateDomainRegistration(rootDomain, isEtn);
         string memory parentDomain = DomainParserLibrary.getParentDomain(domainName);
         address parentDomainOwner = _domains[parentDomain];
-        uint256 price = getDomainPrice(rootDomain, currency);
+        uint256 price = getDomainPrice(rootDomain, isEtn);
 
         // parent domain reward
         uint256 parentReward;
